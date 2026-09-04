@@ -15,7 +15,23 @@ Aplicação web de treino de cálculo mental, criada para desenvolver precisão 
 - histórico, evolução e perfil de desempenho;
 - sequência diária com um descanso semanal;
 - sistema de conquistas privadas;
+- instalação como aplicativo no Android, com ícone, tela cheia e atalhos;
+- navegação inferior otimizada para telas pequenas e aviso de conexão;
 - cadastro e proteção dos dados vinculados à conta.
+
+## Instalar no Android
+
+1. Abra o site no Google Chrome.
+2. Toque em **Instalar app** quando o botão aparecer. Se ele não aparecer, abra o
+   menu do Chrome e escolha **Adicionar à tela inicial** ou **Instalar app**.
+3. Confirme a instalação. O Mente Ágil ficará na tela inicial e abrirá em tela cheia.
+
+Se o link estiver aberto dentro do ChatGPT ou de outro aplicativo, o botão mostra
+um guia e oferece a opção **Abrir no Chrome**. A versão instalada procura atualizações
+do aplicativo sempre que é aberta.
+
+O treino que já estiver aberto pode continuar sem conexão, mas é necessário se
+reconectar antes de concluí-lo para salvar o resultado na conta.
 
 ## Tecnologias
 
@@ -23,6 +39,7 @@ Aplicação web de treino de cálculo mental, criada para desenvolver precisão 
 - Vinext e Vite;
 - Cloudflare Workers;
 - Cloudflare D1 (SQLite);
+- Progressive Web App (PWA) com Service Worker;
 - testes nativos do Node.js.
 
 ## Executar localmente

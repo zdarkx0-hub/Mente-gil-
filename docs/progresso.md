@@ -71,3 +71,14 @@ de interface usam renderização de componentes, não um navegador real.
 
 Depois use o fluxo de build/publicação do Sites. Testes aprovados reduzem riscos;
 não são garantia de ausência absoluta de bugs em todos os dispositivos.
+
+## Aplicativo instalável
+
+- `public/manifest.webmanifest`: identidade, cores, ícones e atalhos do aplicativo.
+- `public/sw.js`: cacheia apenas recursos públicos e mantém `/api/` sempre na rede.
+- `public/offline.html`: resposta segura quando uma nova página é aberta sem conexão.
+- `app/pwa-controls.jsx`: registro do aplicativo, instalação no Android e estado da rede.
+
+O modo móvel usa a mesma aplicação e o mesmo banco do site. Não existe uma segunda
+cópia dos dados. A navegação vai para a parte inferior em telas pequenas e respeita
+as áreas seguras do aparelho. Resultados privados não entram no cache do aplicativo.

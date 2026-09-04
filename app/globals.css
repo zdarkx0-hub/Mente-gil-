@@ -829,3 +829,120 @@ body { font-size: 1rem; line-height: 1.5; }
   .flame-compact { flex-wrap: wrap; padding: 14px; gap: 10px; }
   .flame-compact-record { margin-left: 0; }
 }
+
+/* Installable mobile app shell. */
+body { min-height: 100dvh; }
+.install-app-button {
+  min-height: 44px;
+  padding: 0 12px;
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+  border: 1px solid rgba(110, 231, 183, .45);
+  border-radius: 6px;
+  background: rgba(110, 231, 183, .08);
+  color: var(--mint);
+  font-weight: 800;
+  cursor: pointer;
+  white-space: nowrap;
+}
+.install-app-button:hover { background: rgba(110, 231, 183, .15); border-color: var(--mint); }
+.install-guide {
+  width: min(460px, calc(100% - 28px));
+  max-height: min(680px, calc(100dvh - 28px));
+  padding: 28px;
+  border: 1px solid rgba(103, 232, 249, .38);
+  border-radius: 14px;
+  background: var(--panel);
+  color: var(--ink);
+  box-shadow: 0 30px 90px rgba(0, 0, 0, .65);
+}
+.install-guide::backdrop { background: rgba(0, 0, 0, .72); backdrop-filter: blur(5px); }
+.install-guide-mark {
+  width: 42px;
+  height: 42px;
+  display: grid;
+  place-items: center;
+  border: 1px solid rgba(103, 232, 249, .5);
+  color: var(--cyan);
+  font-weight: 800;
+  transform: skew(-7deg);
+}
+.install-guide h2 { margin: 20px 0 10px; font-size: 1.5rem; letter-spacing: -.03em; }
+.install-guide p { margin: 0; color: var(--muted); font-size: 1rem; line-height: 1.6; }
+.install-guide ol { margin: 20px 0 24px; padding-left: 22px; color: var(--muted); }
+.install-guide li { padding: 5px 0; line-height: 1.55; }
+.install-guide li strong { color: var(--ink); }
+.install-guide-actions { display: flex; gap: 10px; }
+.install-guide-actions .primary-button { flex: 1; }
+.network-status {
+  position: fixed;
+  left: 50%;
+  bottom: max(16px, env(safe-area-inset-bottom));
+  z-index: 80;
+  width: min(560px, calc(100% - 28px));
+  padding: 12px 16px;
+  transform: translateX(-50%);
+  border: 1px solid rgba(251, 191, 36, .45);
+  border-radius: 8px;
+  background: #211b0c;
+  color: #fde68a;
+  box-shadow: 0 18px 45px rgba(0, 0, 0, .4);
+  font-size: .875rem;
+  line-height: 1.5;
+  text-align: center;
+}
+
+@media (max-width: 620px) {
+  html { scroll-padding-top: calc(5rem + env(safe-area-inset-top)); }
+  body { overscroll-behavior-y: none; }
+  .topbar-shell { padding-top: env(safe-area-inset-top); }
+  .topbar {
+    width: 100%;
+    min-height: 62px;
+    padding: 9px max(14px, env(safe-area-inset-right)) 9px max(14px, env(safe-area-inset-left));
+    grid-template-columns: minmax(0, 1fr) auto;
+  }
+  .topbar .brand { min-width: 0; }
+  .topbar .nav-actions { min-width: 0; gap: 7px; }
+  .install-app-button { min-height: 42px; padding: 0 9px; font-size: .8125rem; }
+  .install-guide { padding: 24px 20px max(20px, env(safe-area-inset-bottom)); }
+  .install-guide-actions { flex-direction: column; }
+  .install-guide-actions > * { width: 100%; }
+  .study-navigation {
+    position: fixed;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    z-index: 70;
+    width: 100%;
+    padding: 0 max(4px, env(safe-area-inset-right)) env(safe-area-inset-bottom) max(4px, env(safe-area-inset-left));
+    display: grid;
+    grid-template-columns: repeat(5, minmax(0, 1fr));
+    overflow: visible;
+    border-top: 1px solid var(--line);
+    background: rgba(7, 18, 17, .98);
+    box-shadow: 0 -12px 32px rgba(0, 0, 0, .24);
+    backdrop-filter: blur(16px);
+  }
+  .study-navigation a {
+    min-width: 0;
+    min-height: 58px;
+    padding: 8px 2px 6px;
+    border-top: 3px solid transparent;
+    border-bottom: 0;
+    font-size: .75rem;
+    line-height: 1.2;
+    white-space: normal;
+    text-align: center;
+  }
+  .study-navigation a[aria-current="page"] { border-top-color: var(--mint); border-bottom-color: transparent; }
+  .study-main { padding-bottom: calc(64px + env(safe-area-inset-bottom)); }
+  .site-footer { padding-bottom: 24px; }
+  .network-status { bottom: calc(72px + env(safe-area-inset-bottom)); }
+  input { font-size: 16px !important; }
+}
+
+@media (display-mode: standalone) {
+  .topbar-shell { user-select: none; }
+}

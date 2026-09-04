@@ -1,6 +1,7 @@
 import { chatGPTSignOutPath, getChatGPTUser } from "./chatgpt-auth";
 import Link from "next/link";
 import StudyNavigation from "./study-navigation";
+import PwaControls from "./pwa-controls";
 
 export default async function AuthHeader() {
   const user = await getChatGPTUser();
@@ -15,6 +16,7 @@ export default async function AuthHeader() {
       </Link>
       <StudyNavigation />
       <div className="nav-actions">
+        <PwaControls />
         {user ? (
           <div className="account-actions">
             <span className="nav-account" title={user.email}>{user.displayName}</span>
