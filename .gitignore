@@ -1,0 +1,12 @@
+node_modules/
+dist/
+.next/
+.vinext/
+.wrangler/
+*.tgz
+*.tar.gz
+npm-debug.log*
+.env
+.env.local
+.env.*.local
+.openai/hosting.json
