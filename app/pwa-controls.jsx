@@ -1,6 +1,9 @@
 "use client";
 
 import { useEffect, useRef, useState } from "react";
+import { getPendingSyncCount, syncPendingMutations } from "./offline-client";
+
+const STUDY_ROUTE = /^\/(?:$|treinar(?:\/especificos)?|revisar|progresso(?:\/conquistas)?|ranking)$/;
 
 function isStandaloneMode() {
   if (typeof window === "undefined") return false;
@@ -12,6 +15,8 @@ export default function PwaControls() {
   const [installed, setInstalled] = useState(false);
   const [ready, setReady] = useState(false);
   const [online, setOnline] = useState(true);
+  const [pending, setPending] = useState(0);
+  const [syncing, setSyncing] = useState(false);
   const [showGuide, setShowGuide] = useState(false);
   const [isAndroid, setIsAndroid] = useState(false);
   const guideRef = useRef(null);
@@ -28,6 +33,20 @@ export default function PwaControls() {
         .catch(() => {});
     }
 
+    const refreshPending = () => getPendingSyncCount().then(setPending).catch(() => setPending(0));
+    const synchronize = async () => {
+      setSyncing(true);
+      try {
+        const result = await syncPendingMutations();
+        setPending(result.pending);
+      } finally {
+        setSyncing(false);
+      }
+    };
+
+    refreshPending();
+    if (window.navigator.onLine) synchronize();
+
     const handleInstallPrompt = (event) => {
       event.preventDefault();
       setInstallPrompt(event);
@@ -36,19 +55,36 @@ export default function PwaControls() {
       setInstalled(true);
       setInstallPrompt(null);
     };
-    const handleOnline = () => setOnline(true);
+    const handleOnline = () => {
+      setOnline(true);
+      synchronize();
+    };
     const handleOffline = () => setOnline(false);
+    const handleOfflineStatus = () => refreshPending();
+    const handleOfflineNavigation = (event) => {
+      if (window.navigator.onLine || event.defaultPrevented || event.button !== 0 || event.metaKey || event.ctrlKey || event.shiftKey || event.altKey) return;
+      const anchor = event.target.closest?.("a[href]");
+      if (!anchor) return;
+      const url = new URL(anchor.href, window.location.href);
+      if (url.origin !== window.location.origin || !STUDY_ROUTE.test(url.pathname)) return;
+      event.preventDefault();
+      window.history.pushState({}, "", url.pathname + url.search + url.hash);
+    };
 
     window.addEventListener("beforeinstallprompt", handleInstallPrompt);
     window.addEventListener("appinstalled", handleInstalled);
     window.addEventListener("online", handleOnline);
     window.addEventListener("offline", handleOffline);
+    window.addEventListener("mente-agil-offline-status", handleOfflineStatus);
+    document.addEventListener("click", handleOfflineNavigation);
 
     return () => {
       window.removeEventListener("beforeinstallprompt", handleInstallPrompt);
       window.removeEventListener("appinstalled", handleInstalled);
       window.removeEventListener("online", handleOnline);
       window.removeEventListener("offline", handleOffline);
+      window.removeEventListener("mente-agil-offline-status", handleOfflineStatus);
+      document.removeEventListener("click", handleOfflineNavigation);
     };
   }, []);
 
@@ -112,7 +148,12 @@ export default function PwaControls() {
     </dialog>
     {!online && (
       <div className="network-status" role="status">
-        Sem internet. O treino aberto continua, mas reconecte-se antes de concluir para salvar o resultado.
+        Modo offline. Seus treinos e dados privados continuam neste aparelho e serão sincronizados quando a internet voltar.
+      </div>
+    )}
+    {online && (syncing || pending > 0) && (
+      <div className="network-status" role="status">
+        {syncing ? "Sincronizando seus resultados…" : `${pending} resultado${pending === 1 ? "" : "s"} aguardando sincronização.`}
       </div>
     )}
   </>;

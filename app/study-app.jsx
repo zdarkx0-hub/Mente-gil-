@@ -9,6 +9,7 @@ import SpecificTraining from "./specific-training";
 import DrillHistory from "./drill-history";
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
+import { postJsonOrQueue, privateJsonFetch, readPrivateValue, writePrivateValue } from "./offline-client";
 
 const LEVELS = [
   { id: 0, name: "Aquecimento", short: "1", range: "0–10", color: "#6ee7b7" },
@@ -44,7 +45,7 @@ const OPERATION_LABELS = {
 
 const EMPTY_STATS = { sessions: [], totalCorrect: 0, totalWrong: 0, bestStreak: 0 };
 
-function loadStats() {
+function loadLegacyStats() {
   if (typeof window === "undefined") return EMPTY_STATS;
   try {
     const saved = JSON.parse(localStorage.getItem("mente-agil-stats"));
@@ -264,6 +265,8 @@ export default function StudyApp({ children }) {
   const [sessionStarting, setSessionStarting] = useState(false);
   const [achievementSave, setAchievementSave] = useState("idle");
   const trainingSessionRef = useRef(null);
+  const trainingSessionOfflineRef = useRef(false);
+  const trainingStartedAtRef = useRef(0);
   const pendingTrainingSaveRef = useRef(null);
   const startingRef = useRef(false);
   const sessionEndsAtRef = useRef(0);
@@ -313,7 +316,19 @@ export default function StudyApp({ children }) {
   }, [rankDuration, rankOperation, rankTier]);
 
   useEffect(() => {
-    setStats(loadStats());
+    let active = true;
+    (async () => {
+      const secureStats = await readPrivateValue("device:stats");
+      const legacy = secureStats ?? loadLegacyStats();
+      if (!active) return;
+      setStats(legacy && Array.isArray(legacy.sessions) ? legacy : EMPTY_STATS);
+      if (secureStats === null && legacy !== EMPTY_STATS) {
+        writePrivateValue("device:stats", legacy).then(() => {
+          try { localStorage.removeItem("mente-agil-stats"); } catch {}
+        }).catch(() => {});
+      }
+    })();
+    return () => { active = false; };
   }, []);
 
   useEffect(() => {
@@ -321,10 +336,8 @@ export default function StudyApp({ children }) {
   }, [loadLeaderboard]);
 
   useEffect(() => {
-    fetch("/api/account", { cache: "no-store" })
-      .then(async (response) => ({ ok: response.ok, data: await response.json() }))
-      .then(({ ok, data }) => {
-        if (!ok) throw new Error("Conta indisponível");
+    privateJsonFetch("/api/account")
+      .then(({ data }) => {
         setViewer(data);
         setNickname(data.account?.nickname ?? "");
         setAccountState("ready");
@@ -342,7 +355,7 @@ export default function StudyApp({ children }) {
 
   const persistStats = useCallback((nextStats) => {
     setStats(nextStats);
-    try { localStorage.setItem("mente-agil-stats", JSON.stringify(nextStats)); } catch { /* Account saves do not depend on browser storage. */ }
+    writePrivateValue("device:stats", nextStats).catch(() => {});
   }, []);
 
   const saveTrainingProgress = useCallback(async (payload = pendingTrainingSaveRef.current) => {
@@ -350,45 +363,21 @@ export default function StudyApp({ children }) {
     pendingTrainingSaveRef.current = payload;
     setAchievementSave("saving");
     try {
-      const response = await fetch("/api/achievements/complete", {
-        method: "POST",
-        headers: { "content-type": "application/json" },
-        body: JSON.stringify(payload)
-      });
-      if (!response.ok) throw new Error("Progresso não salvo");
+      const result = await postJsonOrQueue("/api/achievements/complete", payload, { queueKey: payload.sessionId });
       pendingTrainingSaveRef.current = null;
-      setAchievementSave("saved");
-      refreshAchievements();
+      setAchievementSave(result.state === "queued" ? "queued" : "saved");
+      if (result.state === "saved") refreshAchievements();
+      setReviewRevision((current) => current + 1);
     } catch {
       setAchievementSave("error");
     }
   }, [refreshAchievements]);
 
-  const savePracticeError = useCallback((currentQuestion, given, level) => {
-    if (!viewer.account) return;
-    fetch("/api/review/errors", {
-      method: "POST",
-      headers: { "content-type": "application/json" },
-      body: JSON.stringify({
-        operation: currentQuestion.operation,
-        level,
-        a: currentQuestion.a,
-        b: currentQuestion.b,
-        expectedAnswer: currentQuestion.answer,
-        lastGiven: given
-      })
-    }).then((response) => {
-      if (response.ok) setReviewRevision((current) => current + 1);
-    }).catch(() => {});
-  }, [viewer.account]);
-
   const loadOwnProfile = useCallback(async () => {
     setPlayerState("loading");
     setPlayerMessage("Carregando seu histórico privado…");
     try {
-      const response = await fetch("/api/player", { cache: "no-store" });
-      const data = await response.json();
-      if (!response.ok) throw new Error(data.error || "Não foi possível carregar o perfil.");
+      const { data } = await privateJsonFetch("/api/player");
       setPlayerProfile(data);
       setPlayerState("ready");
       setPlayerMessage("");
@@ -468,7 +457,7 @@ export default function StudyApp({ children }) {
       tier: activeTierRef.current,
       ranked: activeRankedRef.current
     };
-    const currentStats = loadStats();
+    const currentStats = stats;
     persistStats({
       sessions: [...currentStats.sessions, session].slice(-40),
       totalCorrect: currentStats.totalCorrect + correct,
@@ -479,10 +468,13 @@ export default function StudyApp({ children }) {
     if (!activeRankedRef.current && trainingSessionRef.current) {
       saveTrainingProgress({
         sessionId: trainingSessionRef.current,
-        answers: currentResults.map(({ operation: answeredOperation, a, b, given }) => ({ operation: answeredOperation, a, b, given }))
+        offline: trainingSessionOfflineRef.current,
+        duration: activeDurationRef.current,
+        startedAt: trainingStartedAtRef.current,
+        answers: currentResults.map(({ operation: answeredOperation, a, b, given, level }) => ({ operation: answeredOperation, a, b, given, level }))
       });
     }
-  }, [adaptiveLevel, bestStreak, persistStats, submitRankedScore, results, status, saveTrainingProgress]);
+  }, [adaptiveLevel, bestStreak, persistStats, submitRankedScore, results, status, saveTrainingProgress, stats]);
 
   useEffect(() => { finishSessionRef.current = finishSession; }, [finishSession]);
 
@@ -509,6 +501,11 @@ export default function StudyApp({ children }) {
     const selectedLevel = rankedMode ? (rankTier === "advanced" ? 4 : 1) : baseLevel;
 
     if (rankedMode) {
+      if (typeof navigator !== "undefined" && !navigator.onLine) {
+        setRankingState("error");
+        setRankingMessage("O ranking precisa de internet para validar a sessão.");
+        return;
+      }
       if (!viewer.account) {
         setRankingState("error");
         setRankingMessage(viewer.authenticated ? "Conclua seu cadastro para participar do ranking." : "Entre ou crie uma conta para participar do ranking.");
@@ -538,21 +535,38 @@ export default function StudyApp({ children }) {
     } else {
       rankedSessionRef.current = null;
       trainingSessionRef.current = null;
+      trainingSessionOfflineRef.current = false;
+      trainingStartedAtRef.current = Date.now();
       if (viewer.account) {
-        try {
-          const response = await fetch("/api/achievements/session", {
-            method: "POST",
-            headers: { "content-type": "application/json" },
-            body: JSON.stringify({ duration: selectedDuration })
-          });
-          if (!response.ok) throw new Error("Não foi possível preparar o treino.");
-          const data = await response.json();
-          if (!data.sessionId) throw new Error("Sessão indisponível.");
-          trainingSessionRef.current = data.sessionId;
-        } catch {
-          setRankingState("error");
-          setRankingMessage("Não foi possível preparar o treino com conquistas. Tente novamente.");
-          return;
+        const useLocalSession = () => {
+          trainingSessionRef.current = crypto.randomUUID();
+          trainingSessionOfflineRef.current = true;
+        };
+        if (typeof navigator !== "undefined" && !navigator.onLine) {
+          useLocalSession();
+        } else {
+          try {
+            const response = await fetch("/api/achievements/session", {
+              method: "POST",
+              headers: { "content-type": "application/json" },
+              body: JSON.stringify({ duration: selectedDuration })
+            });
+            if (!response.ok) {
+              const error = new Error("Não foi possível preparar o treino.");
+              error.serverResponse = true;
+              throw error;
+            }
+            const data = await response.json();
+            if (!data.sessionId) throw new Error("Sessão indisponível.");
+            trainingSessionRef.current = data.sessionId;
+          } catch (error) {
+            if (error?.serverResponse) {
+              setRankingState("error");
+              setRankingMessage("Sua conta não pôde preparar este treino agora.");
+              return;
+            }
+            useLocalSession();
+          }
         }
       }
     }
@@ -606,7 +620,8 @@ export default function StudyApp({ children }) {
       expected: question.answer,
       given: numericAnswer,
       correct,
-      responseMs
+      responseMs,
+      level: adaptiveLevel
     };
     const nextResults = [...results, newResult];
     const nextStreak = correct ? streak + 1 : 0;
@@ -618,7 +633,6 @@ export default function StudyApp({ children }) {
     setStreak(nextStreak);
     setBestStreak((current) => Math.max(current, nextStreak));
     setFeedback({ correct, expected: question.answer });
-    if (!correct) savePracticeError(question, numericAnswer, adaptiveLevel);
 
     let nextLevel = adaptiveLevel;
     const recent = nextResults.slice(-4);
@@ -873,7 +887,8 @@ export default function StudyApp({ children }) {
                 <div className={`achievement-save ${achievementSave}`} role="status">
                   {achievementSave === "saving" && "Salvando o progresso das conquistas…"}
                   {achievementSave === "saved" && <>Progresso salvo na sua conta. <Link href="/progresso/conquistas">Ver minhas conquistas</Link></>}
-                  {achievementSave === "error" && <>Não foi possível salvar o progresso. <button type="button" onClick={() => saveTrainingProgress()}>Tentar salvar novamente</button></>}
+                  {achievementSave === "queued" && "Progresso salvo com segurança neste aparelho. A sincronização será automática quando a internet voltar."}
+                  {achievementSave === "error" && <>Não foi possível guardar o progresso. <button type="button" onClick={() => saveTrainingProgress()}>Tentar novamente</button></>}
                 </div>
               )}
               <div className="summary-stats">

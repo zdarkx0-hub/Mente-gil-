@@ -44,7 +44,7 @@ public class MainActivity extends Activity {
         settings.setMixedContentMode(WebSettings.MIXED_CONTENT_NEVER_ALLOW);
         settings.setCacheMode(WebSettings.LOAD_DEFAULT);
         settings.setTextZoom(100);
-        settings.setUserAgentString(settings.getUserAgentString() + " MenteAgilAndroid/1.1.1");
+        settings.setUserAgentString(settings.getUserAgentString() + " MenteAgilAndroid/1.2.0");
 
         webView.setWebChromeClient(new WebChromeClient() {
             @Override

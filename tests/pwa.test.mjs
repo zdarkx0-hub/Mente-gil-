@@ -18,21 +18,25 @@ test("mobile app manifest has standalone identity, install icons and useful shor
   assert.deepEqual(manifest.shortcuts.map((shortcut) => shortcut.url), ["/treinar", "/treinar/especificos", "/progresso"]);
 });
 
-test("service worker keeps private APIs network-only and provides an offline screen", async () => {
+test("service worker keeps private APIs out of Cache Storage and caches the study shell", async () => {
   const worker = await readFile(new URL("public/sw.js", root), "utf8");
   const offline = await readFile(new URL("public/offline.html", root), "utf8");
   const layout = await readFile(new URL("app/layout.jsx", root), "utf8");
   const controls = await readFile(new URL("app/pwa-controls.jsx", root), "utf8");
 
   assert.match(worker, /url\.pathname\.startsWith\("\/api\/"\)/);
+  assert.match(worker, /APP_SHELL/);
+  assert.match(worker, /"\/treinar\/especificos"/);
   assert.match(worker, /request\.mode === "navigate"/);
-  assert.match(worker, /caches\.match\(OFFLINE_URL\)/);
+  assert.match(worker, /cacheShell\(\)/);
   assert.match(offline, /Você está sem internet/);
   assert.match(layout, /manifest: "\/manifest\.webmanifest"/);
   assert.match(layout, /viewportFit: "cover"/);
   assert.match(controls, /registration\.update\(\)/);
   assert.match(controls, /Abrir no Chrome/);
   assert.match(controls, /ready && !installed/);
+  assert.match(controls, /syncPendingMutations/);
+  assert.match(controls, /Modo offline/);
 });
 
 test("all declared application icons exist and are nonempty", async () => {

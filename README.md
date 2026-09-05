@@ -1,5 +1,7 @@
 # Mente Ágil
 
+**Versão atual: 1.2.0 — Offline First**
+
 Aplicação web de treino de cálculo mental, criada para desenvolver precisão antes de velocidade.
 
 **Site publicado:** [mente-agil-vinicius.zdarkx0.chatgpt.site](https://mente-agil-vinicius.zdarkx0.chatgpt.site)
@@ -16,6 +18,9 @@ Aplicação web de treino de cálculo mental, criada para desenvolver precisão 
 - sequência diária com um descanso semanal;
 - sistema de conquistas privadas;
 - instalação como aplicativo no Android, com ícone, tela cheia e atalhos;
+- modo offline-first: treinos livres, treinos específicos já carregados, histórico local e revisão em cache continuam sem internet;
+- fila criptografada AES-GCM para resultados pendentes, sincronizada automaticamente quando a conexão volta;
+- dados privados offline guardados no armazenamento isolado do navegador/WebView; a chave local não é exportável;
 - navegação inferior otimizada para telas pequenas e aviso de conexão;
 - cadastro e proteção dos dados vinculados à conta.
 
@@ -30,8 +35,12 @@ Se o link estiver aberto dentro do ChatGPT ou de outro aplicativo, o botão most
 um guia e oferece a opção **Abrir no Chrome**. A versão instalada procura atualizações
 do aplicativo sempre que é aberta.
 
-O treino que já estiver aberto pode continuar sem conexão, mas é necessário se
-reconectar antes de concluí-lo para salvar o resultado na conta.
+Depois da primeira abertura online, o núcleo de estudo fica disponível sem conexão.
+Resultados concluídos offline são armazenados localmente em uma fila criptografada e
+sincronizados automaticamente quando a internet volta. Senhas, segredos do banco e
+chaves do servidor nunca são colocados no APK. O ranking continua online, pois precisa
+validar a sessão em tempo real. Conquistas e perfil mostram a última cópia privada
+disponível offline e são atualizados após a sincronização.
 
 ## Tecnologias
 

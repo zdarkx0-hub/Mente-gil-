@@ -1,5 +1,14 @@
-const CACHE_VERSION = "mente-agil-v1";
+const CACHE_VERSION = "mente-agil-shell-v2";
 const OFFLINE_URL = "/offline.html";
+const APP_SHELL = [
+  "/",
+  "/treinar",
+  "/treinar/especificos",
+  "/revisar",
+  "/progresso",
+  "/progresso/conquistas",
+  "/ranking"
+];
 const CORE_ASSETS = [
   OFFLINE_URL,
   "/manifest.webmanifest",
@@ -9,8 +18,17 @@ const CORE_ASSETS = [
   "/icons/apple-touch-icon.png"
 ];
 
+async function cacheShell() {
+  const cache = await caches.open(CACHE_VERSION);
+  await cache.addAll(CORE_ASSETS);
+  await Promise.allSettled(APP_SHELL.map(async (path) => {
+    const response = await fetch(path, { cache: "reload" });
+    if (response.ok) await cache.put(path, response.clone());
+  }));
+}
+
 self.addEventListener("install", (event) => {
-  event.waitUntil(caches.open(CACHE_VERSION).then((cache) => cache.addAll(CORE_ASSETS)));
+  event.waitUntil(cacheShell());
   self.skipWaiting();
 });
 
@@ -22,6 +40,28 @@ self.addEventListener("activate", (event) => {
   );
 });
 
+async function networkFirst(request, fallbackPath) {
+  const cache = await caches.open(CACHE_VERSION);
+  try {
+    const response = await fetch(request);
+    if (response.ok) await cache.put(request, response.clone());
+    return response;
+  } catch {
+    return (await cache.match(request, { ignoreSearch: true }))
+      || (fallbackPath ? await cache.match(fallbackPath) : null)
+      || await cache.match(OFFLINE_URL);
+  }
+}
+
+async function cacheFirst(request) {
+  const cache = await caches.open(CACHE_VERSION);
+  const cached = await cache.match(request);
+  if (cached) return cached;
+  const response = await fetch(request);
+  if (response.ok) await cache.put(request, response.clone());
+  return response;
+}
+
 self.addEventListener("fetch", (event) => {
   const { request } = event;
   if (request.method !== "GET") return;
@@ -30,23 +70,14 @@ self.addEventListener("fetch", (event) => {
   if (url.origin !== self.location.origin || url.pathname.startsWith("/api/")) return;
 
   if (request.mode === "navigate") {
-    event.respondWith(fetch(request).catch(() => caches.match(OFFLINE_URL)));
+    event.respondWith(networkFirst(request, APP_SHELL.includes(url.pathname) ? url.pathname : "/"));
     return;
   }
 
-  const isStaticAsset = url.pathname.startsWith("/_next/static/")
+  const isStaticAsset = url.pathname.startsWith("/_next/")
     || url.pathname.startsWith("/icons/")
-    || url.pathname === "/manifest.webmanifest";
+    || url.pathname === "/manifest.webmanifest"
+    || ["script", "style", "font", "image"].includes(request.destination);
 
-  if (!isStaticAsset) return;
-
-  event.respondWith(
-    caches.match(request).then((cached) => cached || fetch(request).then((response) => {
-      if (response.ok) {
-        const copy = response.clone();
-        caches.open(CACHE_VERSION).then((cache) => cache.put(request, copy));
-      }
-      return response;
-    }))
-  );
+  if (isStaticAsset) event.respondWith(cacheFirst(request));
 });

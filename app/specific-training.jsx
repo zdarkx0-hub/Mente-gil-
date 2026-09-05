@@ -3,6 +3,7 @@
 import { useEffect, useRef, useState } from "react";
 import Link from "next/link";
 import { DRILL_SKILLS, drillAnswer, drillLabel, drillSymbol, generateDrill, summarizeDrill } from "../shared/drills.mjs";
+import { postJsonOrQueue, rememberDrillSession } from "./offline-client";
 
 export default function SpecificTraining({ viewer, accountState, otherSessionActive, onBusyChange, onFeedback, onSaved }) {
   const [config, setConfig] = useState({ operation: "add", skill: "no-carry", count: 10, min: "10", max: "99", table: "7" });
@@ -41,12 +42,19 @@ export default function SpecificTraining({ viewer, accountState, otherSessionAct
     savingRef.current = true;
     setSaveState("saving");
     try {
-      const response = await fetch("/api/drills/complete", {
-        method: "POST", headers: { "content-type": "application/json" }, body: JSON.stringify(payload)
+      const result = await postJsonOrQueue("/api/drills/complete", payload, { queueKey: payload.id });
+      const localSummary = summarizeDrill(payload.config, payload.answers);
+      await rememberDrillSession({
+        id: payload.id,
+        config: localSummary.config,
+        correct: localSummary.correct,
+        wrong: localSummary.wrong,
+        bestStreak: localSummary.bestStreak,
+        accuracy: localSummary.accuracy,
+        completedAt: Date.now()
       });
-      if (!response.ok) throw new Error("Não foi possível salvar");
       pendingRef.current = null;
-      setSaveState("saved");
+      setSaveState(result.state === "queued" ? "queued" : "saved");
       onSaved();
       onBusyChange(false);
     } catch { setSaveState("error"); }
@@ -189,7 +197,8 @@ export default function SpecificTraining({ viewer, accountState, otherSessionAct
         <div className={saveState === "error" ? "drill-error" : "drill-note"} role="status">
           {saveState === "saving" && "Salvando resultado e erros na sua conta…"}
           {saveState === "saved" && <>Salvo na sua conta. <Link href="/progresso/conquistas">Ver conquistas</Link></>}
-          {saveState === "error" && <>Não foi possível salvar. Seu resultado continua aqui. <button type="button" className="drill-text-button" onClick={() => save()}>Tentar salvar novamente</button></>}
+          {saveState === "queued" && "Salvo com segurança neste aparelho. Será sincronizado automaticamente quando a internet voltar."}
+          {saveState === "error" && <>Não foi possível guardar o resultado. <button type="button" className="drill-text-button" onClick={() => save()}>Tentar novamente</button></>}
           {saveState === "guest" && "Treino de visitante: resultado disponível somente nesta tela. Entre na conta antes do próximo para guardar seu progresso."}
         </div>
         {wrongAnswers.length > 0 && <details className="drill-mistakes"><summary>{wrongAnswers.length === 1 ? "Conferir meu erro" : `Conferir meus ${wrongAnswers.length} erros`}</summary><ul>{wrongAnswers.map((item, index) => <li key={index}><strong>{item.a} {drillSymbol(item.operation)} {item.b} = {drillAnswer(item)}</strong><span>Sua resposta: {item.given}</span></li>)}</ul></details>}

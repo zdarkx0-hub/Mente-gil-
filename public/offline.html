@@ -1,28 +1,25 @@
 <!doctype html>
 <html lang="pt-BR">
-  <head>
-    <meta charset="utf-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
-    <meta name="theme-color" content="#071211" />
-    <title>Sem conexão — Mente Ágil</title>
-    <style>
-      :root { color-scheme: dark; font-family: Inter, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif; }
-      * { box-sizing: border-box; }
-      body { min-height: 100dvh; margin: 0; padding: max(24px, env(safe-area-inset-top)) 20px max(24px, env(safe-area-inset-bottom)); display: grid; place-items: center; color: #eef7f6; background: radial-gradient(circle at 50% 10%, rgba(45, 212, 191, .12), transparent 28rem), #071211; }
-      main { width: min(480px, 100%); padding: 32px 24px; border: 1px solid rgba(201, 237, 232, .23); border-radius: 14px; background: #112724; text-align: center; }
-      .mark { width: 52px; height: 52px; margin: 0 auto 24px; display: grid; place-items: center; border: 1px solid rgba(103, 232, 249, .5); color: #67e8f9; font-size: 26px; font-weight: 800; transform: skew(-7deg); }
-      h1 { margin: 0 0 12px; font-size: clamp(1.75rem, 8vw, 2.4rem); letter-spacing: -.04em; }
-      p { margin: 0 0 26px; color: #aac2be; line-height: 1.65; }
-      button { width: 100%; min-height: 50px; border: 0; border-radius: 7px; background: #6ee7b7; color: #06211a; font: inherit; font-weight: 800; cursor: pointer; }
-      button:focus-visible { outline: 2px solid #67e8f9; outline-offset: 4px; }
-    </style>
-  </head>
-  <body>
-    <main>
-      <div class="mark" aria-hidden="true">M</div>
-      <h1>Você está sem internet</h1>
-      <p>Se um treino já estava aberto, volte para ele. Para entrar em outra página ou sincronizar seu progresso, reconecte-se e tente novamente.</p>
-      <button type="button" onclick="location.reload()">Tentar novamente</button>
-    </main>
-  </body>
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover" />
+  <meta name="theme-color" content="#071211" />
+  <title>Mente Ágil — Offline</title>
+  <style>
+    html,body{margin:0;min-height:100%;background:#071211;color:#edf8f5;font-family:system-ui,-apple-system,sans-serif}
+    main{max-width:560px;margin:0 auto;padding:64px 24px}
+    span{display:inline-grid;place-items:center;width:54px;height:54px;border-radius:16px;background:#12312b;font-weight:800;font-size:28px}
+    h1{font-size:30px;margin:24px 0 12px}p{color:#a9c2bc;line-height:1.6}
+    button{margin-top:18px;border:0;border-radius:12px;padding:13px 18px;font-weight:700;background:#d7fbef;color:#092019}
+  </style>
+</head>
+<body>
+  <main>
+    <span>M</span>
+    <h1>Você está sem internet.</h1>
+    <p>Depois que o Mente Ágil é aberto online pela primeira vez, as telas de estudo ficam guardadas no aparelho. Se esta tela apareceu, o cache inicial ainda não foi concluído ou foi limpo pelo Android.</p>
+    <p>Conecte-se uma vez, abra o Mente Ágil e depois seus treinos poderão continuar offline. Resultados pendentes ficam no armazenamento privado do app e sincronizam quando a conexão voltar.</p>
+    <button onclick="location.reload()">Tentar novamente</button>
+  </main>
+</body>
 </html>

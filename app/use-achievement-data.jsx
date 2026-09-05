@@ -2,6 +2,7 @@
 
 import { useCallback, useEffect, useRef, useState } from "react";
 import { ACHIEVEMENTS } from "../shared/achievements.mjs";
+import { privateJsonFetch } from "./offline-client";
 
 // One account-scoped request supplies the home flame and the medals page.
 export default function useAchievementData({ viewer, accountState, revision }) {
@@ -27,9 +28,7 @@ export default function useAchievementData({ viewer, accountState, revision }) {
     if (!accountKey) { setData(null); setState("guest"); return; }
     setState("loading");
     try {
-      const response = await fetch("/api/achievements", { cache: "no-store" });
-      if (!response.ok) throw new Error("Conquistas indisponíveis");
-      const next = await response.json();
+      const { data: next } = await privateJsonFetch("/api/achievements");
       if (!Array.isArray(next.achievements) || !Array.isArray(next.streak?.week)) throw new Error("Resposta inválida");
       if (version !== requestVersion.current) return;
       const unlocked = next.achievements.filter((item) => item.unlocked).map((item) => item.id);

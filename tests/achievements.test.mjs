@@ -44,6 +44,31 @@ test("private persisted progress, full ranking history, training retries and rev
     assert.equal(sqlite.prepare("SELECT SUM(correct) AS total FROM achievement_training_sessions_v1").get().total, 10);
     assert.equal((await call("/api/achievements")).data.unlockedCount, 4);
 
+    const offlineNow = 1_800_000_000_000;
+    const offlineSessionId = crypto.randomUUID();
+    const offlineAnswers = Array.from({ length: 10 }, (_, a) => ({
+      operation: "add", a, b: 2, given: a === 9 ? 0 : a + 2, level: 0
+    }));
+    for (let retry = 0; retry < 2; retry += 1) {
+      const offlineSaved = await call("/api/achievements/complete", {
+        now: offlineNow,
+        body: {
+          sessionId: offlineSessionId,
+          offline: true,
+          duration: 60,
+          startedAt: offlineNow - 60_000,
+          answers: offlineAnswers
+        }
+      });
+      assert.equal(offlineSaved.status, 200);
+    }
+    assert.equal(sqlite.prepare("SELECT COUNT(*) AS n FROM achievement_training_sessions_v1 WHERE id = ?").get(offlineSessionId).n, 1);
+    assert.equal(sqlite.prepare("SELECT SUM(wrong_count) AS n FROM practice_errors_v1 WHERE user_id = ?").get(key("player-a")).n, 1);
+    assert.equal((await call("/api/achievements/complete", {
+      now: offlineNow,
+      body: { sessionId: crypto.randomUUID(), offline: true, duration: 15, startedAt: offlineNow - 1_000, answers: offlineAnswers }
+    })).status, 400);
+
     const mixedId = (await call("/api/achievements/session", { body: { duration: 300 } })).data.sessionId;
     await call("/api/achievements/complete", { body: { sessionId: mixedId, answers: [
       { operation: "sub", a: 12, b: 3, given: 9 },
@@ -51,6 +76,7 @@ test("private persisted progress, full ranking history, training retries and rev
       { operation: "mul", a: 4, b: 5, given: 20 }
     ] } });
     assert.deepEqual({ ...sqlite.prepare("SELECT correct, wrong, best_streak FROM achievement_training_sessions_v1 WHERE id = ?").get(mixedId) }, { correct: 2, wrong: 1, best_streak: 1 });
+    sqlite.prepare("DELETE FROM practice_errors_v1 WHERE user_id = ?").run(key("player-a"));
 
     for (let index = 0; index < 10; index += 1) {
       const id = "error-" + index;

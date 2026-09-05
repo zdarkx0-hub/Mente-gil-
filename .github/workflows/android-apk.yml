@@ -43,14 +43,14 @@ jobs:
 
       - name: Prepare artifact
         run: |
-          cp android-app/app/build/outputs/apk/debug/app-debug.apk Mente-Agil-v1.1.1.apk
-          sha256sum Mente-Agil-v1.1.1.apk > Mente-Agil-v1.1.1.apk.sha256
+          cp android-app/app/build/outputs/apk/debug/app-debug.apk Mente-Agil-v1.2.0.apk
+          sha256sum Mente-Agil-v1.2.0.apk > Mente-Agil-v1.2.0.apk.sha256
 
       - name: Upload APK
         uses: actions/upload-artifact@v4
         with:
-          name: Mente-Agil-APK-v1.1.1
+          name: Mente-Agil-APK-v1.2.0
           path: |
-            Mente-Agil-v1.1.1.apk
-            Mente-Agil-v1.1.1.apk.sha256
+            Mente-Agil-v1.2.0.apk
+            Mente-Agil-v1.2.0.apk.sha256
           if-no-files-found: error

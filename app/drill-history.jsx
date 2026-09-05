@@ -2,6 +2,7 @@
 
 import { useCallback, useEffect, useRef, useState } from "react";
 import { drillLabel } from "../shared/drills.mjs";
+import { privateJsonFetch } from "./offline-client";
 
 export default function DrillHistory({ viewer, accountState, revision }) {
   const [history, setHistory] = useState([]);
@@ -14,9 +15,8 @@ export default function DrillHistory({ viewer, accountState, revision }) {
     if (!viewer.account) { setHistory([]); setHistoryState("guest"); return; }
     setHistoryState("loading");
     try {
-      const response = await fetch("/api/drills", { cache: "no-store" });
-      const data = await response.json();
-      if (!response.ok || !Array.isArray(data.sessions)) throw new Error("Histórico indisponível");
+      const { data } = await privateJsonFetch("/api/drills");
+      if (!Array.isArray(data.sessions)) throw new Error("Histórico indisponível");
       if (request !== historyRequest.current) return;
       setHistory(data.sessions);
       setHistoryState("ready");

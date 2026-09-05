@@ -1,6 +1,7 @@
 "use client";
 
 import { useCallback, useEffect, useRef, useState } from "react";
+import { postJsonOrQueue, privateJsonFetch, removeCachedReviewError } from "./offline-client";
 
 const OPERATION_LABELS = {
   add: "Soma",
@@ -47,9 +48,7 @@ export default function ReviewCard({ viewer, accountState, revision, onResolved 
     }
     setState("loading");
     try {
-      const response = await fetch("/api/review/errors", { cache: "no-store" });
-      const data = await response.json();
-      if (!response.ok) throw new Error(data.error || "Não foi possível carregar seus erros.");
+      const { data } = await privateJsonFetch("/api/review/errors");
       if (version !== requestVersion.current) return;
       const nextErrors = Array.isArray(data.errors) ? data.errors : [];
       setErrors(nextErrors);
@@ -95,17 +94,17 @@ export default function ReviewCard({ viewer, accountState, revision, onResolved 
     setSubmitting(true);
     const version = requestVersion.current;
     try {
-      const response = await fetch("/api/review/errors/answer", {
-        method: "POST",
-        headers: { "content-type": "application/json" },
-        body: JSON.stringify({ id: current.id, given })
-      });
-      const data = await response.json();
+      const result = await postJsonOrQueue("/api/review/errors/answer", { id: current.id, given }, { queueKey: `review:${current.id}` });
+      const data = result.state === "queued"
+        ? { correct: given === current.expectedAnswer, expectedAnswer: current.expectedAnswer, queued: true }
+        : result.data;
       if (version !== requestVersion.current) return;
-      if (!response.ok) throw new Error(data.error || "Não foi possível conferir a resposta.");
-      if (data.correct) onResolved?.();
+      if (data.correct) {
+        if (data.queued) await removeCachedReviewError(current);
+        onResolved?.();
+      }
       setFeedback(data.correct
-        ? { correct: true, message: "Correto — este erro foi resolvido." }
+        ? { correct: true, message: data.queued ? "Correto — resolução salva neste aparelho e aguardando sincronização." : "Correto — este erro foi resolvido." }
         : { correct: false, message: `Ainda não. A resposta é ${data.expectedAnswer}.` });
       feedbackTimer.current = window.setTimeout(() => {
         if (version !== requestVersion.current) return;
