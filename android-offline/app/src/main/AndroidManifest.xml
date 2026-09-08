@@ -1,7 +1,8 @@
 <?xml version="1.0" encoding="utf-8"?>
 <manifest xmlns:android="http://schemas.android.com/apk/res/android">
 
-    <!-- Intencionalmente sem a permissão INTERNET: todo o treino funciona localmente. -->
+    <!-- A rede é usada somente pelo ranking mobile; todo o treino continua local. -->
+    <uses-permission android:name="android.permission.INTERNET" />
     <application
         android:allowBackup="false"
         android:fullBackupContent="false"

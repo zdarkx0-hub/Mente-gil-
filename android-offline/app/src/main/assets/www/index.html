@@ -3,18 +3,18 @@
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
-  <meta name="theme-color" content="#071211">
+  <meta name="theme-color" content="#090e1d">
   <meta http-equiv="Content-Security-Policy" content="default-src 'self' file:; connect-src 'none'; img-src 'self' data:; media-src 'none'; object-src 'none'; frame-src 'none'; style-src 'self'; script-src 'self'; base-uri 'none'; form-action 'none'">
-  <title>Mente Ágil Offline</title>
+  <title>Mente Ágil Mobile</title>
   <link rel="stylesheet" href="styles.css">
 </head>
 <body>
   <header class="app-header">
     <div class="brand" aria-label="Mente Ágil">
       <span class="brand-mark" aria-hidden="true">M</span>
-      <span>Mente Ágil</span>
+      <span>Mente Ágil <small>MOBILE</small></span>
     </div>
-    <span class="offline-badge"><i aria-hidden="true"></i> Offline</span>
+    <span class="offline-badge"><i aria-hidden="true"></i> Treino offline</span>
   </header>
 
   <main id="app" class="app-shell">
@@ -98,6 +98,7 @@
           <div><strong id="summary-correct">0</strong><small>acertos</small></div>
           <div><strong id="summary-time">0s</strong><small>média</small></div>
         </div>
+        <div id="summary-rank-result" class="summary-rank-result hidden" aria-live="polite"></div>
         <div id="summary-errors" class="error-review"></div>
         <button type="button" class="primary" id="train-again-button">Treinar novamente <span aria-hidden="true">→</span></button>
       </div>
@@ -126,6 +127,53 @@
       <div id="achievement-list" class="achievement-grid"></div>
     </section>
 
+    <section class="screen" data-screen="ranking" aria-labelledby="ranking-title">
+      <p class="eyebrow rank-eyebrow">EXCLUSIVO DO APLICATIVO</p>
+      <h1 id="ranking-title">Ranking mobile</h1>
+      <p class="muted">Este placar não se mistura com o ranking do site. É necessário estar conectado para jogar e atualizar.</p>
+
+      <div class="rank-identity panel">
+        <label for="ranking-name">Nome público no ranking</label>
+        <input id="ranking-name" maxlength="18" autocomplete="off" placeholder="Escolha seu nome">
+      </div>
+
+      <div class="panel ranking-panel">
+        <fieldset>
+          <legend>Operação</legend>
+          <div class="segmented three rank-filter" id="rank-operation-options">
+            <button type="button" data-value="add" class="active">Soma</button>
+            <button type="button" data-value="sub">Subtração</button>
+            <button type="button" data-value="mul">Multiplicação</button>
+          </div>
+        </fieldset>
+        <div class="rank-split">
+          <fieldset>
+            <legend>Dificuldade</legend>
+            <div class="segmented vertical rank-filter" id="rank-level-options">
+              <button type="button" data-value="base" class="active">Base</button>
+              <button type="button" data-value="medium">Até 100</button>
+              <button type="button" data-value="advanced">Até 1.000</button>
+            </div>
+          </fieldset>
+          <fieldset>
+            <legend>Tempo</legend>
+            <div class="segmented vertical rank-filter" id="rank-duration-options">
+              <button type="button" data-value="60" class="active">1 minuto</button>
+              <button type="button" data-value="120">2 minutos</button>
+            </div>
+          </fieldset>
+        </div>
+
+        <button type="button" class="primary rank-start" id="rank-start-button">Jogar esta categoria <span aria-hidden="true">↗</span></button>
+      </div>
+
+      <div class="rank-header">
+        <div><strong>Melhores resultados</strong><small id="rank-category-label">Soma · Base · 1 min</small></div>
+        <button type="button" id="rank-refresh-button">Atualizar</button>
+      </div>
+      <div id="ranking-list" class="ranking-list"><div class="empty-state">Conecte-se para carregar o ranking mobile.</div></div>
+    </section>
+
     <section class="screen" data-screen="settings" aria-labelledby="settings-title">
       <p class="eyebrow">NO APARELHO</p>
       <h1 id="settings-title">Ajustes</h1>
@@ -137,15 +185,17 @@
           <input id="sound-toggle" type="checkbox" checked>
         </label>
         <div class="security-note"><span aria-hidden="true">◆</span><p><strong>Dados protegidos</strong><br>Seu histórico é criptografado e guardado no espaço privado do aplicativo.</p></div>
+        <div class="independent-note"><span aria-hidden="true">M</span><p><strong>Uma edição independente</strong><br>O aplicativo e o site evoluem separadamente. Uma mudança feita no site pode não aparecer aqui, e o ranking mobile permanece separado.</p></div>
         <button type="button" class="danger-button" id="clear-data-button">Apagar todo o histórico</button>
       </div>
-      <p class="version">Mente Ágil Offline · versão 1.0.0</p>
+      <p class="version">Mente Ágil Mobile · versão 1.1.0</p>
     </section>
   </main>
 
   <nav class="bottom-nav" aria-label="Navegação principal">
     <button type="button" class="active" data-target="train"><span aria-hidden="true">＋</span><small>Treinar</small></button>
     <button type="button" data-target="history"><span aria-hidden="true">≡</span><small>Histórico</small></button>
+    <button type="button" data-target="ranking"><span aria-hidden="true">♛</span><small>Ranking</small></button>
     <button type="button" data-target="progress"><span aria-hidden="true">↗</span><small>Progresso</small></button>
     <button type="button" data-target="settings"><span aria-hidden="true">⚙</span><small>Ajustes</small></button>
   </nav>

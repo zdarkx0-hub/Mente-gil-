@@ -3,7 +3,8 @@
 
   const core = window.MenteCore;
   const DEFAULT_DATA = {
-    version: 1,
+    version: 2,
+    installId: "",
     profile: { name: "Jogador", sound: true },
     sessions: []
   };
@@ -24,6 +25,7 @@
 
   let data = loadData();
   let selection = { operation: "add", level: "base", mode: "count", goal: 10 };
+  let rankSelection = { operation: "add", level: "base", duration: 60 };
   let session = null;
   let tickTimer = null;
   let nextTimer = null;
@@ -31,6 +33,8 @@
   let toastTimer = null;
   let clearArmedUntil = 0;
   let audioContext = null;
+  let rankRequestSequence = 0;
+  const rankRequests = new Map();
 
   const $ = (selector) => document.querySelector(selector);
   const $$ = (selector) => Array.from(document.querySelectorAll(selector));
@@ -43,14 +47,15 @@
       } else if (window.localStorage) {
         raw = window.localStorage.getItem("mente-agil-offline-v1") || "";
       }
-      if (!raw) return structuredCloneSafe(DEFAULT_DATA);
+      if (!raw) return freshData();
 
       const parsed = JSON.parse(raw);
       if (!parsed || typeof parsed !== "object" || !Array.isArray(parsed.sessions)) {
-        return structuredCloneSafe(DEFAULT_DATA);
+        return freshData();
       }
       return {
-        version: 1,
+        version: 2,
+        installId: validInstallId(parsed.installId) ? parsed.installId : createInstallId(),
         profile: {
           name: typeof parsed.profile?.name === "string" ? parsed.profile.name.slice(0, 24) : "Jogador",
           sound: parsed.profile?.sound !== false
@@ -58,8 +63,27 @@
         sessions: parsed.sessions.filter(validSession).slice(-100)
       };
     } catch (_) {
-      return structuredCloneSafe(DEFAULT_DATA);
+      return freshData();
     }
+  }
+
+  function freshData() {
+    const next = structuredCloneSafe(DEFAULT_DATA);
+    next.installId = createInstallId();
+    return next;
+  }
+
+  function validInstallId(value) {
+    return typeof value === "string" && /^[A-Za-z0-9-]{16,80}$/.test(value);
+  }
+
+  function createInstallId() {
+    try {
+      if (window.crypto && typeof window.crypto.randomUUID === "function") return window.crypto.randomUUID();
+    } catch (_) {
+      // Continua com um identificador local aleatório em WebViews antigos.
+    }
+    return "mobile-" + Date.now().toString(36) + "-" + Math.random().toString(36).slice(2) + Math.random().toString(36).slice(2);
   }
 
   function structuredCloneSafe(value) {
@@ -100,6 +124,48 @@
     toastTimer = setTimeout(() => toast.classList.remove("show"), 2600);
   }
 
+  window.MenteRankingNative = {
+    resolve(requestId, raw) {
+      const pending = rankRequests.get(requestId);
+      if (!pending) return;
+      clearTimeout(pending.timer);
+      rankRequests.delete(requestId);
+      try {
+        const response = JSON.parse(raw);
+        if (response && response.error) pending.reject(new Error(String(response.error)));
+        else pending.resolve(response);
+      } catch (_) {
+        pending.reject(new Error("Resposta inválida do ranking mobile."));
+      }
+    }
+  };
+
+  function rankingRequest(method, action, payload) {
+    return new Promise((resolve, reject) => {
+      if (!window.MenteAgilRanking) {
+        reject(new Error("O ranking está disponível somente no aplicativo conectado."));
+        return;
+      }
+      const requestId = "rank-" + Date.now().toString(36) + "-" + (++rankRequestSequence).toString(36);
+      const timer = setTimeout(() => {
+        rankRequests.delete(requestId);
+        reject(new Error("O ranking demorou para responder. Verifique sua conexão."));
+      }, 12_000);
+      rankRequests.set(requestId, { resolve, reject, timer });
+      try {
+        if (method === "GET") {
+          window.MenteAgilRanking.list(requestId, payload.operation, payload.level, payload.duration);
+        } else {
+          window.MenteAgilRanking.post(requestId, action, JSON.stringify(payload));
+        }
+      } catch (_) {
+        clearTimeout(timer);
+        rankRequests.delete(requestId);
+        reject(new Error("Não foi possível acessar o ranking mobile."));
+      }
+    });
+  }
+
   function setSingleActive(containerSelector, button) {
     $$(containerSelector + " button").forEach((item) => item.classList.toggle("active", item === button));
   }
@@ -113,17 +179,21 @@
     $$(".bottom-nav button").forEach((button) => button.classList.toggle("active", button.dataset.target === target));
     if (target === "history") renderHistory();
     if (target === "progress") renderProgress();
+    if (target === "ranking") loadRanking();
     window.scrollTo(0, 0);
   }
 
-  function startSession() {
+  function startSession(options) {
+    const chosen = options && options.operation ? options : selection;
     clearInterval(tickTimer);
     clearTimeout(nextTimer);
     session = {
-      operation: selection.operation,
-      level: selection.level,
-      mode: selection.mode,
-      goal: selection.goal,
+      operation: chosen.operation,
+      level: chosen.level,
+      mode: chosen.mode,
+      goal: chosen.goal,
+      ranked: Boolean(chosen.ranked),
+      rankSessionId: chosen.rankSessionId || "",
       startedAt: Date.now(),
       questionStartedAt: Date.now(),
       question: null,
@@ -136,7 +206,7 @@
     $("#setup-view").classList.add("hidden");
     $("#summary-view").classList.add("hidden");
     $("#session-view").classList.remove("hidden");
-    $("#session-label").textContent = LABELS.operations[selection.operation] + " · " + LABELS.levels[selection.level];
+    $("#session-label").textContent = (session.ranked ? "RANK · " : "") + LABELS.operations[session.operation] + " · " + LABELS.levels[session.level];
     $("#correct-count").textContent = "0";
     $("#wrong-count").textContent = "0";
     $("#feedback").textContent = "";
@@ -255,6 +325,13 @@
     const completed = session;
     session = null;
 
+    if (cancelled && completed.ranked) {
+      showSetup();
+      switchScreen("ranking");
+      showToast("Tentativa de ranking cancelada.");
+      return;
+    }
+
     if (cancelled && completed.answers.length === 0) {
       showSetup();
       showToast("Treino encerrado.");
@@ -271,11 +348,13 @@
       finishedAt: Date.now(),
       correct: completed.correct,
       wrong: completed.wrong,
+      ranked: completed.ranked,
       answers: completed.answers
     };
     data.sessions.push(finished);
     saveData();
     showSummary(finished);
+    if (completed.ranked) submitRankedSession(completed, finished);
   }
 
   function showSetup() {
@@ -298,9 +377,39 @@
     $("#summary-accuracy").textContent = accuracy + "%";
     $("#summary-correct").textContent = String(finished.correct);
     $("#summary-time").textContent = average + "s";
+    const rankResult = $("#summary-rank-result");
+    rankResult.textContent = "";
+    rankResult.classList.add("hidden");
+    $("#train-again-button").firstChild.textContent = finished.ranked ? "Voltar ao ranking " : "Treinar novamente ";
+    $("#train-again-button").dataset.target = finished.ranked ? "ranking" : "train";
     renderSummaryErrors(finished.answers.filter((answer) => !answer.correct));
     renderHome();
     window.scrollTo(0, 0);
+  }
+
+  async function submitRankedSession(completed, finished) {
+    const rankResult = $("#summary-rank-result");
+    rankResult.textContent = "Enviando resultado ao ranking mobile…";
+    rankResult.classList.remove("hidden");
+    try {
+      const result = await rankingRequest("POST", "submit", {
+        installId: data.installId,
+        sessionId: completed.rankSessionId,
+        answers: completed.answers.map((answer) => ({
+          a: answer.a,
+          b: answer.b,
+          given: answer.given,
+          elapsedMs: answer.elapsedMs
+        }))
+      });
+      const improved = result.improved ? "Novo recorde! " : "";
+      rankResult.textContent = improved + result.attemptScore + " pontos · posição " + result.position + " no ranking mobile.";
+      finished.rankScore = Number(result.attemptScore) || 0;
+      finished.rankPosition = Number(result.position) || 0;
+      saveData(false);
+    } catch (error) {
+      rankResult.textContent = error.message || "Não foi possível enviar o resultado.";
+    }
   }
 
   function renderSummaryErrors(errors) {
@@ -323,6 +432,105 @@
   function renderHome() {
     const streak = core.practiceStreak(data.sessions);
     $("#streak-value").textContent = String(streak.current);
+  }
+
+  function rankCategoryLabel() {
+    return LABELS.operations[rankSelection.operation] + " · " + LABELS.levels[rankSelection.level]
+      + " · " + (rankSelection.duration === 60 ? "1 min" : "2 min");
+  }
+
+  async function loadRanking() {
+    const host = $("#ranking-list");
+    $("#rank-category-label").textContent = rankCategoryLabel();
+    host.replaceChildren();
+    const loading = document.createElement("div");
+    loading.className = "empty-state";
+    loading.textContent = "Carregando ranking mobile…";
+    host.appendChild(loading);
+    try {
+      const result = await rankingRequest("GET", "list", rankSelection);
+      renderRanking(Array.isArray(result.entries) ? result.entries : []);
+    } catch (error) {
+      host.replaceChildren();
+      const unavailable = document.createElement("div");
+      unavailable.className = "empty-state";
+      unavailable.textContent = (error.message || "Ranking indisponível.") + " O treino offline continua funcionando normalmente.";
+      host.appendChild(unavailable);
+    }
+  }
+
+  function renderRanking(entries) {
+    const host = $("#ranking-list");
+    host.replaceChildren();
+    if (!entries.length) {
+      const empty = document.createElement("div");
+      empty.className = "empty-state";
+      empty.textContent = "Ainda não há resultados nesta categoria. Seja o primeiro!";
+      host.appendChild(empty);
+      return;
+    }
+    const myName = data.profile.name.trim().toLocaleLowerCase("pt-BR");
+    entries.forEach((entry) => {
+      const card = document.createElement("article");
+      card.className = "rank-item" + (String(entry.nickname).toLocaleLowerCase("pt-BR") === myName ? " is-me" : "");
+      const position = document.createElement("span");
+      position.className = "rank-position";
+      position.textContent = String(entry.position);
+      const player = document.createElement("div");
+      player.className = "rank-player";
+      const nickname = document.createElement("strong");
+      nickname.textContent = String(entry.nickname);
+      const details = document.createElement("small");
+      details.textContent = entry.correct + " acertos · sequência " + entry.bestStreak;
+      player.append(nickname, details);
+      const score = document.createElement("span");
+      score.className = "rank-score";
+      score.append(document.createTextNode(String(entry.score)));
+      const points = document.createElement("small");
+      points.textContent = "pontos";
+      score.appendChild(points);
+      card.append(position, player, score);
+      host.appendChild(card);
+    });
+  }
+
+  async function startRankedSession() {
+    const button = $("#rank-start-button");
+    const nickname = $("#ranking-name").value.trim().slice(0, 18);
+    if (nickname.length < 2) {
+      showToast("Escolha um nome com pelo menos 2 caracteres.");
+      $("#ranking-name").focus();
+      return;
+    }
+    button.disabled = true;
+    button.firstChild.textContent = "Preparando partida… ";
+    try {
+      const result = await rankingRequest("POST", "session", {
+        installId: data.installId,
+        nickname,
+        operation: rankSelection.operation,
+        level: rankSelection.level,
+        duration: rankSelection.duration
+      });
+      data.profile.name = result.nickname || nickname;
+      $("#player-name").value = data.profile.name;
+      $("#ranking-name").value = data.profile.name;
+      saveData(false);
+      switchScreen("train");
+      startSession({
+        operation: rankSelection.operation,
+        level: rankSelection.level,
+        mode: "time",
+        goal: rankSelection.duration,
+        ranked: true,
+        rankSessionId: result.sessionId
+      });
+    } catch (error) {
+      showToast(error.message || "Não foi possível iniciar o ranking.");
+    } finally {
+      button.disabled = false;
+      button.firstChild.textContent = "Jogar esta categoria ";
+    }
   }
 
   function renderHistory() {
@@ -466,18 +674,49 @@
       selection.goal = Number(button.dataset.value);
       setSingleActive("#mode-options", button);
     }));
+    $$("#rank-operation-options button").forEach((button) => button.addEventListener("click", () => {
+      rankSelection.operation = button.dataset.value;
+      setSingleActive("#rank-operation-options", button);
+      loadRanking();
+    }));
+    $$("#rank-level-options button").forEach((button) => button.addEventListener("click", () => {
+      rankSelection.level = button.dataset.value;
+      setSingleActive("#rank-level-options", button);
+      loadRanking();
+    }));
+    $$("#rank-duration-options button").forEach((button) => button.addEventListener("click", () => {
+      rankSelection.duration = Number(button.dataset.value);
+      setSingleActive("#rank-duration-options", button);
+      loadRanking();
+    }));
     $$(".bottom-nav button").forEach((button) => button.addEventListener("click", () => switchScreen(button.dataset.target)));
     $("#start-button").addEventListener("click", startSession);
+    $("#rank-start-button").addEventListener("click", startRankedSession);
+    $("#rank-refresh-button").addEventListener("click", loadRanking);
     $("#stop-button").addEventListener("click", () => finishSession(true));
     $("#answer-form").addEventListener("submit", submitAnswer);
-    $("#train-again-button").addEventListener("click", showSetup);
+    $("#train-again-button").addEventListener("click", (event) => {
+      showSetup();
+      if (event.currentTarget.dataset.target === "ranking") switchScreen("ranking");
+    });
 
     const nameInput = $("#player-name");
     nameInput.value = data.profile.name;
+    const rankingNameInput = $("#ranking-name");
+    rankingNameInput.value = data.profile.name.slice(0, 18);
     nameInput.addEventListener("input", () => {
       clearTimeout(nameSaveTimer);
       nameSaveTimer = setTimeout(() => {
         data.profile.name = nameInput.value.trim().slice(0, 24) || "Jogador";
+        rankingNameInput.value = data.profile.name.slice(0, 18);
+        saveData();
+      }, 350);
+    });
+    rankingNameInput.addEventListener("input", () => {
+      clearTimeout(nameSaveTimer);
+      nameSaveTimer = setTimeout(() => {
+        data.profile.name = rankingNameInput.value.trim().slice(0, 18) || "Jogador";
+        nameInput.value = data.profile.name;
         saveData();
       }, 350);
     });
@@ -500,15 +739,12 @@
         }, 4600);
         return;
       }
-      data = structuredCloneSafe(DEFAULT_DATA);
-      if (window.MenteAgilData && typeof window.MenteAgilData.clear === "function") {
-        window.MenteAgilData.clear();
-      } else if (window.localStorage) {
-        window.localStorage.removeItem("mente-agil-offline-v1");
-      }
+      data.sessions = [];
+      saveData(false);
       button.textContent = "Apagar todo o histórico";
       clearArmedUntil = 0;
       nameInput.value = data.profile.name;
+      rankingNameInput.value = data.profile.name.slice(0, 18);
       soundToggle.checked = data.profile.sound;
       renderAll();
       showToast("Histórico apagado deste aparelho.");
@@ -522,5 +758,6 @@
   }
 
   bindEvents();
+  saveData(false);
   renderAll();
 })();

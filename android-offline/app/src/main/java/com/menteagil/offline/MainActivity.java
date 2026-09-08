@@ -16,17 +16,18 @@ import java.nio.charset.StandardCharsets;
 
 public final class MainActivity extends Activity {
     private WebView webView;
+    private MobileRankingBridge mobileRankingBridge;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
 
         Window window = getWindow();
-        window.setStatusBarColor(Color.rgb(7, 18, 17));
-        window.setNavigationBarColor(Color.rgb(7, 18, 17));
+        window.setStatusBarColor(Color.rgb(9, 14, 29));
+        window.setNavigationBarColor(Color.rgb(9, 14, 29));
 
         webView = new WebView(this);
-        webView.setBackgroundColor(Color.rgb(7, 18, 17));
+        webView.setBackgroundColor(Color.rgb(9, 14, 29));
         configureWebView(webView);
         setContentView(webView);
 
@@ -51,6 +52,8 @@ public final class MainActivity extends Activity {
         settings.setTextZoom(100);
 
         view.addJavascriptInterface(new SecureDataBridge(this), "MenteAgilData");
+        mobileRankingBridge = new MobileRankingBridge(view);
+        view.addJavascriptInterface(mobileRankingBridge, "MenteAgilRanking");
         view.setWebViewClient(new LocalOnlyWebViewClient());
     }
 
@@ -73,6 +76,8 @@ public final class MainActivity extends Activity {
     protected void onDestroy() {
         if (webView != null) {
             webView.removeJavascriptInterface("MenteAgilData");
+            webView.removeJavascriptInterface("MenteAgilRanking");
+            if (mobileRankingBridge != null) mobileRankingBridge.close();
             webView.destroy();
         }
         super.onDestroy();

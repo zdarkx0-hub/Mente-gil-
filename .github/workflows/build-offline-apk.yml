@@ -1,4 +1,4 @@
-name: Build Offline APK
+name: Build Mobile APK
 
 on:
   pull_request:
@@ -53,14 +53,14 @@ jobs:
 
       - name: Prepare download
         run: |
-          cp app/build/outputs/apk/debug/app-debug.apk Mente-Agil-Offline-v1.0.0.apk
-          sha256sum Mente-Agil-Offline-v1.0.0.apk > Mente-Agil-Offline-v1.0.0.apk.sha256
+          cp app/build/outputs/apk/debug/app-debug.apk Mente-Agil-Mobile-v1.1.0.apk
+          sha256sum Mente-Agil-Mobile-v1.1.0.apk > Mente-Agil-Mobile-v1.1.0.apk.sha256
 
       - name: Publish APK artifact
         uses: actions/upload-artifact@v4
         with:
-          name: Mente-Agil-Offline-1.0.0
+          name: Mente-Agil-Mobile-v1.1.0
           path: |
-            android-offline/Mente-Agil-Offline-v1.0.0.apk
-            android-offline/Mente-Agil-Offline-v1.0.0.apk.sha256
+            android-offline/Mente-Agil-Mobile-v1.1.0.apk
+            android-offline/Mente-Agil-Mobile-v1.1.0.apk.sha256
           if-no-files-found: error
