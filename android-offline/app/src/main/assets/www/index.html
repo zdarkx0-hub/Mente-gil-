@@ -1,0 +1,157 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <meta name="theme-color" content="#071211">
+  <meta http-equiv="Content-Security-Policy" content="default-src 'self' file:; connect-src 'none'; img-src 'self' data:; media-src 'none'; object-src 'none'; frame-src 'none'; style-src 'self'; script-src 'self'; base-uri 'none'; form-action 'none'">
+  <title>Mente Ágil Offline</title>
+  <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+  <header class="app-header">
+    <div class="brand" aria-label="Mente Ágil">
+      <span class="brand-mark" aria-hidden="true">M</span>
+      <span>Mente Ágil</span>
+    </div>
+    <span class="offline-badge"><i aria-hidden="true"></i> Offline</span>
+  </header>
+
+  <main id="app" class="app-shell">
+    <section class="screen active" data-screen="train" aria-labelledby="train-title">
+      <div id="setup-view">
+        <div class="intro-row">
+          <div>
+            <p class="eyebrow">TREINO LOCAL</p>
+            <h1 id="train-title">Pronto para calcular?</h1>
+            <p class="muted">Escolha o treino e comece. Nada depende de internet.</p>
+          </div>
+          <div class="flame-card" aria-label="Sequência diária">
+            <span aria-hidden="true">🔥</span>
+            <strong id="streak-value">0</strong>
+            <small>dias</small>
+          </div>
+        </div>
+
+        <div class="panel setup-panel">
+          <fieldset>
+            <legend>Operação</legend>
+            <div class="segmented three" id="operation-options">
+              <button type="button" data-value="add" class="active">Soma</button>
+              <button type="button" data-value="sub">Subtração</button>
+              <button type="button" data-value="mul">Multiplicação</button>
+            </div>
+          </fieldset>
+
+          <fieldset>
+            <legend>Dificuldade</legend>
+            <div class="level-grid" id="level-options">
+              <button type="button" class="level active" data-value="base"><b>01</b><span><strong>Base</strong><small>contas curtas</small></span></button>
+              <button type="button" class="level" data-value="medium"><b>02</b><span><strong>Até 100</strong><small>duas dezenas</small></span></button>
+              <button type="button" class="level" data-value="advanced"><b>03</b><span><strong>Até 1.000</strong><small>desafio avançado</small></span></button>
+            </div>
+          </fieldset>
+
+          <fieldset>
+            <legend>Formato</legend>
+            <div class="mode-grid" id="mode-options">
+              <button type="button" data-mode="count" data-value="10" class="active"><strong>10</strong><small>questões</small></button>
+              <button type="button" data-mode="count" data-value="15"><strong>15</strong><small>questões</small></button>
+              <button type="button" data-mode="time" data-value="60"><strong>1</strong><small>minuto</small></button>
+              <button type="button" data-mode="time" data-value="120"><strong>2</strong><small>minutos</small></button>
+            </div>
+          </fieldset>
+
+          <button type="button" class="primary" id="start-button">Começar treino <span aria-hidden="true">→</span></button>
+        </div>
+      </div>
+
+      <div id="session-view" class="hidden" aria-live="polite">
+        <div class="session-top">
+          <button type="button" class="icon-button" id="stop-button" aria-label="Encerrar treino">×</button>
+          <div><small id="session-label">Soma · Base</small><strong id="session-progress">0 / 10</strong></div>
+          <div class="timer"><small>Tempo</small><strong id="timer-value">00:00</strong></div>
+        </div>
+        <div class="progress-track"><span id="progress-fill"></span></div>
+        <div class="question-card">
+          <p class="question-number" id="question-number">QUESTÃO 1</p>
+          <div class="equation" id="equation">7 + 8</div>
+          <form id="answer-form">
+            <label class="sr-only" for="answer-input">Sua resposta</label>
+            <input id="answer-input" type="number" inputmode="numeric" autocomplete="off" placeholder="Digite a resposta" required>
+            <button type="submit" class="answer-button" aria-label="Confirmar resposta">✓</button>
+          </form>
+          <p id="feedback" class="feedback" aria-live="assertive"></p>
+        </div>
+        <div class="score-row">
+          <span><i class="dot correct"></i><b id="correct-count">0</b> acertos</span>
+          <span><i class="dot wrong"></i><b id="wrong-count">0</b> erros</span>
+        </div>
+      </div>
+
+      <div id="summary-view" class="hidden summary-view">
+        <span class="summary-mark" aria-hidden="true">✓</span>
+        <p class="eyebrow">TREINO CONCLUÍDO</p>
+        <h2 id="summary-title">Bom trabalho!</h2>
+        <div class="summary-grid">
+          <div><strong id="summary-accuracy">0%</strong><small>precisão</small></div>
+          <div><strong id="summary-correct">0</strong><small>acertos</small></div>
+          <div><strong id="summary-time">0s</strong><small>média</small></div>
+        </div>
+        <div id="summary-errors" class="error-review"></div>
+        <button type="button" class="primary" id="train-again-button">Treinar novamente <span aria-hidden="true">→</span></button>
+      </div>
+    </section>
+
+    <section class="screen" data-screen="history" aria-labelledby="history-title">
+      <p class="eyebrow">SEU CAMINHO</p>
+      <h1 id="history-title">Histórico</h1>
+      <p class="muted">Os treinos ficam somente neste aparelho.</p>
+      <div id="history-list" class="stack-list"></div>
+    </section>
+
+    <section class="screen" data-screen="progress" aria-labelledby="progress-title">
+      <p class="eyebrow">EVOLUÇÃO</p>
+      <h1 id="progress-title">Progresso</h1>
+      <div class="stat-grid">
+        <div class="panel stat"><span>Acertos</span><strong id="total-correct">0</strong></div>
+        <div class="panel stat"><span>Precisão</span><strong id="total-accuracy">0%</strong></div>
+        <div class="panel stat"><span>Recorde</span><strong id="best-streak">0 dias</strong></div>
+      </div>
+      <div class="panel chart-panel">
+        <div class="panel-title"><strong>Últimos treinos</strong><small>precisão</small></div>
+        <div id="accuracy-chart" class="bar-chart" aria-label="Precisão dos últimos treinos"></div>
+      </div>
+      <div class="section-title"><h2>Conquistas</h2><span id="achievement-count">0 / 8</span></div>
+      <div id="achievement-list" class="achievement-grid"></div>
+    </section>
+
+    <section class="screen" data-screen="settings" aria-labelledby="settings-title">
+      <p class="eyebrow">NO APARELHO</p>
+      <h1 id="settings-title">Ajustes</h1>
+      <div class="panel settings-panel">
+        <label for="player-name">Seu nome</label>
+        <input id="player-name" maxlength="24" autocomplete="off" placeholder="Jogador">
+        <label class="switch-row" for="sound-toggle">
+          <span><strong>Sons</strong><small>acerto e erro</small></span>
+          <input id="sound-toggle" type="checkbox" checked>
+        </label>
+        <div class="security-note"><span aria-hidden="true">◆</span><p><strong>Dados protegidos</strong><br>Seu histórico é criptografado e guardado no espaço privado do aplicativo.</p></div>
+        <button type="button" class="danger-button" id="clear-data-button">Apagar todo o histórico</button>
+      </div>
+      <p class="version">Mente Ágil Offline · versão 1.0.0</p>
+    </section>
+  </main>
+
+  <nav class="bottom-nav" aria-label="Navegação principal">
+    <button type="button" class="active" data-target="train"><span aria-hidden="true">＋</span><small>Treinar</small></button>
+    <button type="button" data-target="history"><span aria-hidden="true">≡</span><small>Histórico</small></button>
+    <button type="button" data-target="progress"><span aria-hidden="true">↗</span><small>Progresso</small></button>
+    <button type="button" data-target="settings"><span aria-hidden="true">⚙</span><small>Ajustes</small></button>
+  </nav>
+
+  <div id="toast" class="toast" role="status" aria-live="polite"></div>
+  <script src="core.js"></script>
+  <script src="app.js"></script>
+</body>
+</html>
