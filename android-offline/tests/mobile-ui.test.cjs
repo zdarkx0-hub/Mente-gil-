@@ -29,3 +29,34 @@ test("mobile layout uses five destinations and keeps large touch targets", () =>
   assert.match(css, /min-height: 56px/);
   assert.match(css, /--lime: #c8ff64/);
 });
+
+test("version 1.2 exposes four earned themes and a verified medal collection", () => {
+  const html = read("app/src/main/assets/www/index.html");
+  const app = read("app/src/main/assets/www/app.js");
+  const css = read("app/src/main/assets/www/styles.css");
+  assert.match(html, /id="theme-grid"/);
+  assert.match(html, /id="medal-grid"/);
+  for (const theme of ["neon", "flames", "crystal", "eclipse"]) {
+    assert.match(app, new RegExp('id: "' + theme + '"'));
+  }
+  assert.match(css, /body\[data-theme="flames"\]/);
+  assert.match(css, /body\[data-theme="crystal"\]/);
+  assert.match(css, /body\[data-theme="eclipse"\]/);
+  assert.match(app, /Escolha no máximo três medalhas/);
+  assert.match(app, /rankingEligibleMedals/);
+});
+
+test("privacy controls include encrypted portable backup and separate deletion choices", () => {
+  const html = read("app/src/main/assets/www/index.html");
+  const secureBridge = read("app/src/main/java/com/menteagil/offline/SecureDataBridge.java");
+  const rankingBridge = read("app/src/main/java/com/menteagil/offline/MobileRankingBridge.java");
+  assert.match(html, /Backup criptografado/);
+  assert.match(html, /Apagar somente o histórico local/);
+  assert.match(html, /Excluir perfil e histórico do ranking/);
+  assert.match(secureBridge, /PBKDF2WithHmacSHA256/);
+  assert.match(secureBridge, /AES\/GCM\/NoPadding/);
+  assert.match(secureBridge, /exportBackup/);
+  assert.match(secureBridge, /importBackup/);
+  assert.match(rankingBridge, /"answer", "finish", "medals"/);
+  assert.doesNotMatch(rankingBridge, /Set\.of/);
+});

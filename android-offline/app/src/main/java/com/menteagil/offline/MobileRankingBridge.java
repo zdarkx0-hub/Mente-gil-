@@ -11,6 +11,9 @@ import java.net.HttpURLConnection;
 import java.net.URL;
 import java.net.URLEncoder;
 import java.nio.charset.StandardCharsets;
+import java.util.Arrays;
+import java.util.Collections;
+import java.util.HashSet;
 import java.util.Set;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
@@ -18,8 +21,11 @@ import java.util.concurrent.Executors;
 public final class MobileRankingBridge {
     private static final String API = "https://mente-agil-vinicius.zdarkx0.chatgpt.site/api/mobile-ranking";
     private static final int MAX_RESPONSE_BYTES = 64 * 1024;
-    private static final Set<String> OPERATIONS = Set.of("add", "sub", "mul");
-    private static final Set<String> LEVELS = Set.of("base", "medium", "advanced");
+    private static final Set<String> OPERATIONS = immutableSet("add", "sub", "mul");
+    private static final Set<String> LEVELS = immutableSet("base", "medium", "advanced");
+    private static final Set<String> ACTIONS = immutableSet(
+        "session", "answer", "finish", "medals", "privacy/export", "privacy/delete"
+    );
 
     private final WebView webView;
     private final ExecutorService executor = Executors.newSingleThreadExecutor();
@@ -46,7 +52,7 @@ public final class MobileRankingBridge {
 
     @JavascriptInterface
     public void post(String requestId, String action, String body) {
-        if (!validRequestId(requestId) || !("session".equals(action) || "submit".equals(action)) || body == null || body.length() > 100_000) {
+        if (!validRequestId(requestId) || !ACTIONS.contains(action) || body == null || body.length() > 100_000) {
             deliver(requestId, errorJson("Solicitação inválida."));
             return;
         }
@@ -77,7 +83,7 @@ public final class MobileRankingBridge {
         connection.setRequestMethod(method);
         connection.setRequestProperty("Accept", "application/json");
         connection.setRequestProperty("X-Mente-Agil-Mobile", "1");
-        connection.setRequestProperty("User-Agent", "MenteAgilMobile/1.1.0 Android");
+        connection.setRequestProperty("User-Agent", "MenteAgilMobile/1.2.0 Android");
         if (body != null) {
             connection.setDoOutput(true);
             connection.setRequestProperty("Content-Type", "application/json; charset=utf-8");
@@ -125,5 +131,9 @@ public final class MobileRankingBridge {
 
     private static String errorJson(String message) {
         return "{\"error\":" + JSONObject.quote(message) + "}";
+    }
+
+    private static Set<String> immutableSet(String... values) {
+        return Collections.unmodifiableSet(new HashSet<>(Arrays.asList(values)));
     }
 }

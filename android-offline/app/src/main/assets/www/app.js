@@ -3,9 +3,10 @@
 
   const core = window.MenteCore;
   const DEFAULT_DATA = {
-    version: 2,
+    version: 3,
     installId: "",
-    profile: { name: "Jogador", sound: true },
+    profile: { name: "Jogador", sound: true, theme: "neon", publicMedals: [] },
+    rankingEligibleMedals: [],
     sessions: []
   };
   const LABELS = {
@@ -22,8 +23,37 @@
     { id: "solid", icon: "◆", title: "Base firme", description: "Alcance 90% em três treinos.", unlocked: (stats, sessions) => sessions.filter((item) => core.accuracy(item.correct, item.wrong) >= 90 && item.answers.length >= 10).length >= 3 },
     { id: "thousand", icon: "1K", title: "Mil na conta", description: "Chegue a 1.000 acertos.", unlocked: (stats) => stats.correct >= 1000 }
   ];
+  const THEMES = [
+    { id: "neon", name: "Pulso Neon", unlock: "Tema inicial", available: () => true },
+    { id: "flames", name: "Chamas", unlock: "Pratique 7 dias seguidos", available: (stats) => stats.streak.best >= 7 },
+    { id: "crystal", name: "Cristal", unlock: "Faça 95% em 5 treinos", available: (_stats, sessions) => sessions.filter((item) => item.answers.length >= 10 && core.accuracy(item.correct, item.wrong) >= 95).length >= 5 },
+    { id: "eclipse", name: "Eclipse", unlock: "Alcance 1.000 acertos", available: (stats) => stats.correct >= 1000 }
+  ];
+  const LOCAL_MEDALS = [
+    { id: "first", icon: "✦", name: "Primeiro passo", detail: "Conclua 1 treino", available: (_stats, sessions) => sessions.length >= 1 },
+    { id: "ten", icon: "10", name: "Ritmo firme", detail: "Conclua 10 treinos", available: (_stats, sessions) => sessions.length >= 10 },
+    { id: "perfect", icon: "◎", name: "Precisão absoluta", detail: "Faça 10 questões sem errar", available: (_stats, sessions) => sessions.some((item) => item.answers.length >= 10 && item.wrong === 0) },
+    { id: "flame7", icon: "🔥", name: "Fogo aceso", detail: "Pratique 7 dias seguidos", available: (stats) => stats.streak.best >= 7 },
+    { id: "hundred", icon: "100", name: "Centenário", detail: "Some 100 acertos", available: (stats) => stats.correct >= 100 },
+    { id: "thousand", icon: "1K", name: "Mil na conta", detail: "Some 1.000 acertos", available: (stats) => stats.correct >= 1000 },
+    { id: "explorer", icon: "◇", name: "Trindade", detail: "Treine as 3 operações", available: (_stats, sessions) => ["add", "sub", "mul"].every((op) => sessions.some((item) => item.operation === op && item.answers.length >= 10)) },
+    { id: "add500", icon: "+", name: "Mestre da soma", detail: "500 acertos em soma", available: (_stats, sessions) => operationCorrect(sessions, "add") >= 500 },
+    { id: "sub500", icon: "−", name: "Mestre da subtração", detail: "500 acertos em subtração", available: (_stats, sessions) => operationCorrect(sessions, "sub") >= 500 },
+    { id: "mul500", icon: "×", name: "Mestre da tabuada", detail: "500 acertos em multiplicação", available: (_stats, sessions) => operationCorrect(sessions, "mul") >= 500 }
+  ];
+  const RANKING_MEDALS = [
+    { id: "ranked-first", icon: "♢", name: "Competidor", detail: "Conclua uma partida ranqueada" },
+    { id: "ranked-perfect", icon: "🎯", name: "Partida perfeita", detail: "10 acertos ou mais sem errar" },
+    { id: "ranked-streak", icon: "⚡", name: "Sequência 20", detail: "Acerte 20 contas seguidas" },
+    { id: "ranked-add", icon: "+", name: "Soma verificada", detail: "100 acertos ranqueados" },
+    { id: "ranked-sub", icon: "−", name: "Subtração verificada", detail: "100 acertos ranqueados" },
+    { id: "ranked-mul", icon: "×", name: "Tabuada verificada", detail: "100 acertos ranqueados" },
+    { id: "ranked-thousand", icon: "1K", name: "Milhar verificado", detail: "100 acertos no avançado" }
+  ];
+  const RANKING_MEDAL_ICONS = Object.fromEntries(RANKING_MEDALS.map((item) => [item.id, item.icon]));
 
   let data = loadData();
+  document.body.dataset.theme = data.profile.theme;
   let selection = { operation: "add", level: "base", mode: "count", goal: 10 };
   let rankSelection = { operation: "add", level: "base", duration: 60 };
   let session = null;
@@ -32,6 +62,8 @@
   let nameSaveTimer = null;
   let toastTimer = null;
   let clearArmedUntil = 0;
+  let deleteRankArmedUntil = 0;
+  let eraseArmedUntil = 0;
   let audioContext = null;
   let rankRequestSequence = 0;
   const rankRequests = new Map();
@@ -54,12 +86,19 @@
         return freshData();
       }
       return {
-        version: 2,
+        version: 3,
         installId: validInstallId(parsed.installId) ? parsed.installId : createInstallId(),
         profile: {
           name: typeof parsed.profile?.name === "string" ? parsed.profile.name.slice(0, 24) : "Jogador",
-          sound: parsed.profile?.sound !== false
+          sound: parsed.profile?.sound !== false,
+          theme: THEMES.some((item) => item.id === parsed.profile?.theme) ? parsed.profile.theme : "neon",
+          publicMedals: Array.isArray(parsed.profile?.publicMedals)
+            ? [...new Set(parsed.profile.publicMedals.map(String))].filter((id) => RANKING_MEDALS.some((item) => item.id === id)).slice(0, 3)
+            : []
         },
+        rankingEligibleMedals: Array.isArray(parsed.rankingEligibleMedals)
+          ? parsed.rankingEligibleMedals.map(String).filter((id) => RANKING_MEDALS.some((item) => item.id === id))
+          : [],
         sessions: parsed.sessions.filter(validSession).slice(-100)
       };
     } catch (_) {
@@ -180,6 +219,7 @@
     if (target === "history") renderHistory();
     if (target === "progress") renderProgress();
     if (target === "ranking") loadRanking();
+    if (target === "settings") { renderCustomization(); loadRankingMedals(); }
     window.scrollTo(0, 0);
   }
 
@@ -194,6 +234,7 @@
       goal: chosen.goal,
       ranked: Boolean(chosen.ranked),
       rankSessionId: chosen.rankSessionId || "",
+      pendingRankQuestion: chosen.rankQuestion || null,
       startedAt: Date.now(),
       questionStartedAt: Date.now(),
       question: null,
@@ -219,11 +260,19 @@
 
   function makeNextQuestion() {
     if (!session) return;
-    let next = core.buildQuestion(session.level, session.operation);
+    let next;
+    if (session.ranked) {
+      next = session.pendingRankQuestion;
+      session.pendingRankQuestion = null;
+      if (!next) return;
+      next = { ...next, operation: session.operation };
+    } else {
+      next = core.buildQuestion(session.level, session.operation);
+    }
     const previous = session.question;
     let attempts = 0;
     while (previous && next.a === previous.a && next.b === previous.b && attempts < 5) {
-      next = core.buildQuestion(session.level, session.operation);
+      next = session.ranked ? next : core.buildQuestion(session.level, session.operation);
       attempts += 1;
     }
     session.question = next;
@@ -243,7 +292,7 @@
     if (session.mode === "time") {
       const remaining = Math.max(0, session.goal - elapsed);
       $("#timer-value").textContent = formatTime(remaining);
-      if (remaining <= 0) finishSession(false);
+      if (remaining <= 0 && !session.locked) finishSession(false);
     } else {
       $("#timer-value").textContent = formatTime(elapsed);
     }
@@ -255,7 +304,7 @@
     return String(Math.floor(safe / 60)).padStart(2, "0") + ":" + String(safe % 60).padStart(2, "0");
   }
 
-  function submitAnswer(event) {
+  async function submitAnswer(event) {
     event.preventDefault();
     if (!session || session.locked) return;
     const input = $("#answer-input");
@@ -269,6 +318,48 @@
 
     session.locked = true;
     const question = session.question;
+    if (session.ranked) {
+      try {
+        const result = await rankingRequest("POST", "answer", {
+          installId: data.installId,
+          sessionId: session.rankSessionId,
+          questionId: question.id,
+          given
+        });
+        if (!session) return;
+        const correct = Boolean(result.correct);
+        const answer = {
+          a: question.a, b: question.b, symbol: question.symbol,
+          expected: Number(result.expectedAnswer), given, correct,
+          elapsedMs: Math.max(0, Date.now() - session.questionStartedAt)
+        };
+        session.answers.push(answer);
+        session.correct = Number(result.correctCount) || 0;
+        session.wrong = Number(result.wrongCount) || 0;
+        session.pendingRankQuestion = result.question || null;
+        $("#correct-count").textContent = String(session.correct);
+        $("#wrong-count").textContent = String(session.wrong);
+        const feedback = $("#feedback");
+        feedback.textContent = correct ? "Certo!" : "Resposta: " + answer.expected;
+        feedback.className = "feedback " + (correct ? "correct" : "wrong");
+        playSound(correct);
+        updateSessionHeader();
+        const expired = Date.now() - session.startedAt >= session.goal * 1000;
+        if (expired) {
+          session.locked = false;
+          nextTimer = setTimeout(() => finishSession(false), 180);
+        } else {
+          nextTimer = setTimeout(makeNextQuestion, correct ? 220 : 360);
+        }
+      } catch (error) {
+        if (!session) return;
+        session.locked = false;
+        showToast(error.message || "Não foi possível validar a resposta.");
+        $("#answer-input").value = "";
+        requestAnimationFrame(() => $("#answer-input").focus());
+      }
+      return;
+    }
     const correct = given === question.answer;
     const answer = {
       a: question.a,
@@ -392,20 +483,15 @@
     rankResult.textContent = "Enviando resultado ao ranking mobile…";
     rankResult.classList.remove("hidden");
     try {
-      const result = await rankingRequest("POST", "submit", {
+      const result = await rankingRequest("POST", "finish", {
         installId: data.installId,
-        sessionId: completed.rankSessionId,
-        answers: completed.answers.map((answer) => ({
-          a: answer.a,
-          b: answer.b,
-          given: answer.given,
-          elapsedMs: answer.elapsedMs
-        }))
+        sessionId: completed.rankSessionId
       });
       const improved = result.improved ? "Novo recorde! " : "";
       rankResult.textContent = improved + result.attemptScore + " pontos · posição " + result.position + " no ranking mobile.";
       finished.rankScore = Number(result.attemptScore) || 0;
       finished.rankPosition = Number(result.position) || 0;
+      if (Array.isArray(result.eligibleMedals)) data.rankingEligibleMedals = result.eligibleMedals;
       saveData(false);
     } catch (error) {
       rankResult.textContent = error.message || "Não foi possível enviar o resultado.";
@@ -480,6 +566,15 @@
       player.className = "rank-player";
       const nickname = document.createElement("strong");
       nickname.textContent = String(entry.nickname);
+      const medals = document.createElement("span");
+      medals.className = "rank-medals";
+      (Array.isArray(entry.medals) ? entry.medals : []).slice(0, 3).forEach((id) => {
+        const icon = document.createElement("span");
+        icon.textContent = RANKING_MEDAL_ICONS[id] || "◆";
+        icon.title = RANKING_MEDALS.find((item) => item.id === id)?.name || "Medalha verificada";
+        medals.appendChild(icon);
+      });
+      if (medals.childNodes.length) nickname.appendChild(medals);
       const details = document.createElement("small");
       details.textContent = entry.correct + " acertos · sequência " + entry.bestStreak;
       player.append(nickname, details);
@@ -523,7 +618,8 @@
         mode: "time",
         goal: rankSelection.duration,
         ranked: true,
-        rankSessionId: result.sessionId
+        rankSessionId: result.sessionId,
+        rankQuestion: result.question
       });
     } catch (error) {
       showToast(error.message || "Não foi possível iniciar o ranking.");
@@ -629,6 +725,156 @@
     $("#achievement-count").textContent = unlockedCount + " / " + ACHIEVEMENTS.length;
   }
 
+  function operationCorrect(sessions, operation) {
+    return sessions.reduce((total, item) => total + (item.operation === operation ? Number(item.correct) || 0 : 0), 0);
+  }
+
+  function renderCustomization() {
+    const stats = core.summarize(data.sessions);
+    const availableThemes = THEMES.filter((item) => item.available(stats, data.sessions));
+    if (!availableThemes.some((item) => item.id === data.profile.theme)) {
+      data.profile.theme = "neon";
+      document.body.dataset.theme = "neon";
+      saveData(false);
+    }
+    $("#theme-progress").textContent = availableThemes.length + " / " + THEMES.length;
+    const themes = $("#theme-grid");
+    themes.replaceChildren();
+    THEMES.forEach((theme) => {
+      const unlocked = theme.available(stats, data.sessions);
+      const card = document.createElement("button");
+      card.type = "button";
+      card.className = "theme-card" + (data.profile.theme === theme.id ? " active" : "") + (unlocked ? "" : " locked");
+      card.disabled = !unlocked;
+      card.setAttribute("aria-pressed", String(data.profile.theme === theme.id));
+      const preview = document.createElement("span");
+      preview.className = "theme-preview " + theme.id;
+      preview.append(document.createElement("i"), document.createElement("i"), document.createElement("i"));
+      const name = document.createElement("strong"); name.textContent = theme.name;
+      const detail = document.createElement("small"); detail.textContent = unlocked ? (data.profile.theme === theme.id ? "Tema em uso" : "Toque para usar") : "Bloqueado · " + theme.unlock;
+      card.append(preview, name, detail);
+      card.addEventListener("click", () => {
+        if (!unlocked) return;
+        data.profile.theme = theme.id;
+        document.body.dataset.theme = theme.id;
+        saveData();
+        renderCustomization();
+        showToast("Tema " + theme.name + " ativado.");
+      });
+      themes.appendChild(card);
+    });
+
+    const medals = $("#medal-grid");
+    medals.replaceChildren();
+    let unlockedCount = 0;
+    LOCAL_MEDALS.forEach((medal) => {
+      const unlocked = medal.available(stats, data.sessions);
+      if (unlocked) unlockedCount += 1;
+      medals.appendChild(medalCard(medal, unlocked, false));
+    });
+    RANKING_MEDALS.forEach((medal) => {
+      const unlocked = data.rankingEligibleMedals.includes(medal.id);
+      const selected = data.profile.publicMedals.includes(medal.id);
+      if (unlocked) unlockedCount += 1;
+      const card = medalCard(medal, unlocked, true, selected);
+      if (unlocked) card.addEventListener("click", () => togglePublicMedal(medal.id));
+      medals.appendChild(card);
+    });
+    $("#medal-progress").textContent = unlockedCount + " conquistadas";
+  }
+
+  function medalCard(medal, unlocked, verified, selected = false) {
+    const card = document.createElement("button");
+    card.type = "button";
+    card.className = "medal-card" + (unlocked ? "" : " locked") + (selected ? " selected" : "");
+    card.disabled = !unlocked || !verified;
+    if (verified) card.setAttribute("aria-pressed", String(selected));
+    const icon = document.createElement("span"); icon.className = "medal-icon"; icon.textContent = medal.icon;
+    const info = document.createElement("div");
+    const name = document.createElement("strong"); name.textContent = medal.name + (verified ? " ◆" : "");
+    if (verified) name.classList.add("verified-mark");
+    const detail = document.createElement("small");
+    detail.textContent = unlocked ? (verified ? (selected ? "Selecionada para o ranking" : "Verificada · toque para selecionar") : "Conquistada neste aparelho") : medal.detail;
+    info.append(name, detail); card.append(icon, info);
+    return card;
+  }
+
+  async function togglePublicMedal(id) {
+    const previous = data.profile.publicMedals.slice();
+    const selected = previous.includes(id) ? previous.filter((item) => item !== id) : [...previous, id];
+    if (selected.length > 3) { showToast("Escolha no máximo três medalhas para o ranking."); return; }
+    data.profile.publicMedals = selected;
+    saveData(false); renderCustomization();
+    try {
+      const result = await rankingRequest("POST", "medals", { installId: data.installId, selected });
+      data.rankingEligibleMedals = Array.isArray(result.eligible) ? result.eligible : data.rankingEligibleMedals;
+      data.profile.publicMedals = Array.isArray(result.selected) ? result.selected : selected;
+      saveData(false); renderCustomization();
+      showToast("Medalhas públicas atualizadas.");
+    } catch (error) {
+      data.profile.publicMedals = previous;
+      saveData(false); renderCustomization();
+      showToast(error.message || "Não foi possível atualizar as medalhas.");
+    }
+  }
+
+  async function loadRankingMedals(showStatus = false) {
+    try {
+      const result = await rankingRequest("POST", "medals", { installId: data.installId });
+      data.rankingEligibleMedals = Array.isArray(result.eligible) ? result.eligible : [];
+      data.profile.publicMedals = Array.isArray(result.selected) ? result.selected.slice(0, 3) : [];
+      saveData(false); renderCustomization();
+      if (showStatus) showToast("Medalhas verificadas sincronizadas.");
+    } catch (error) {
+      if (showStatus) showToast(error.message || "Sem conexão para sincronizar medalhas.");
+    }
+  }
+
+  function backupPayload() {
+    return JSON.stringify({ backupVersion: 1, exportedAt: Date.now(), profile: data.profile, sessions: data.sessions });
+  }
+
+  function backupPassword() {
+    return $("#backup-password").value;
+  }
+
+  function exportEncryptedBackup(json = backupPayload()) {
+    if (backupPassword().length < 8) { showToast("Use uma senha de backup com pelo menos 8 caracteres."); $("#backup-password").focus(); return false; }
+    if (!window.MenteAgilData?.exportBackup) { showToast("Backup criptografado indisponível nesta versão."); return false; }
+    const payload = window.MenteAgilData.exportBackup(json, backupPassword());
+    if (!payload) { showToast("Não foi possível gerar o backup."); return false; }
+    $("#backup-payload").value = payload;
+    showToast("Backup criptografado gerado. Copie e guarde o código.");
+    return true;
+  }
+
+  function sanitizeImportedBackup(parsed) {
+    if (!parsed || parsed.backupVersion !== 1 || !Array.isArray(parsed.sessions)) return null;
+    const theme = THEMES.some((item) => item.id === parsed.profile?.theme) ? parsed.profile.theme : "neon";
+    return {
+      version: 3,
+      installId: data.installId,
+      profile: {
+        name: typeof parsed.profile?.name === "string" ? parsed.profile.name.slice(0, 24) : data.profile.name,
+        sound: parsed.profile?.sound !== false,
+        theme,
+        publicMedals: data.profile.publicMedals
+      },
+      rankingEligibleMedals: data.rankingEligibleMedals,
+      sessions: parsed.sessions.filter(validSession).slice(-100)
+    };
+  }
+
+  async function copyBackupCode() {
+    const field = $("#backup-payload");
+    if (!field.value) { showToast("Gere ou cole um código de backup primeiro."); return; }
+    try {
+      if (navigator.clipboard?.writeText) await navigator.clipboard.writeText(field.value);
+      else { field.focus(); field.select(); document.execCommand("copy"); }
+      showToast("Código do backup copiado.");
+    } catch (_) { field.focus(); field.select(); showToast("Selecione e copie o código manualmente."); }
+  }
+
   function playSound(correct) {
     if (!data.profile.sound) return;
     const AudioContextClass = window.AudioContext || window.webkitAudioContext;
@@ -729,19 +975,48 @@
       showToast(soundToggle.checked ? "Sons ativados." : "Sons desativados.");
     });
 
+    $("#sync-medals-button").addEventListener("click", () => loadRankingMedals(true));
+    $("#export-backup-button").addEventListener("click", () => exportEncryptedBackup());
+    $("#copy-backup-button").addEventListener("click", copyBackupCode);
+    $("#import-backup-button").addEventListener("click", () => {
+      const payload = $("#backup-payload").value.trim();
+      if (!payload || backupPassword().length < 8) { showToast("Cole o backup e digite a senha usada nele."); return; }
+      if (!window.MenteAgilData?.importBackup) { showToast("Importação indisponível nesta versão."); return; }
+      try {
+        const raw = window.MenteAgilData.importBackup(payload, backupPassword());
+        const restored = raw ? sanitizeImportedBackup(JSON.parse(raw)) : null;
+        if (!restored) throw new Error("invalid");
+        data = restored;
+        document.body.dataset.theme = data.profile.theme;
+        saveData();
+        nameInput.value = data.profile.name;
+        rankingNameInput.value = data.profile.name.slice(0, 18);
+        soundToggle.checked = data.profile.sound;
+        renderAll();
+        showToast("Backup importado com segurança.");
+      } catch (_) { showToast("Backup ou senha inválidos."); }
+    });
+    $("#export-ranking-data-button").addEventListener("click", async () => {
+      if (backupPassword().length < 8) { showToast("Crie uma senha para proteger a exportação."); $("#backup-password").focus(); return; }
+      try {
+        const result = await rankingRequest("POST", "privacy/export", { installId: data.installId });
+        exportEncryptedBackup(JSON.stringify({ rankingExportVersion: 1, data: result }));
+      } catch (error) { showToast(error.message || "Não foi possível exportar os dados do ranking."); }
+    });
+
     $("#clear-data-button").addEventListener("click", (event) => {
       const button = event.currentTarget;
       if (Date.now() > clearArmedUntil) {
         clearArmedUntil = Date.now() + 4500;
         button.textContent = "Toque novamente para confirmar";
         setTimeout(() => {
-          if (Date.now() >= clearArmedUntil) button.textContent = "Apagar todo o histórico";
+          if (Date.now() >= clearArmedUntil) button.textContent = "Apagar somente o histórico local";
         }, 4600);
         return;
       }
       data.sessions = [];
       saveData(false);
-      button.textContent = "Apagar todo o histórico";
+      button.textContent = "Apagar somente o histórico local";
       clearArmedUntil = 0;
       nameInput.value = data.profile.name;
       rankingNameInput.value = data.profile.name.slice(0, 18);
@@ -749,12 +1024,58 @@
       renderAll();
       showToast("Histórico apagado deste aparelho.");
     });
+
+    $("#delete-ranking-button").addEventListener("click", async (event) => {
+      const button = event.currentTarget;
+      if (Date.now() > deleteRankArmedUntil) {
+        deleteRankArmedUntil = Date.now() + 5000;
+        button.textContent = "Toque novamente para excluir do ranking";
+        setTimeout(() => { if (Date.now() >= deleteRankArmedUntil) button.textContent = "Excluir perfil e histórico do ranking"; }, 5100);
+        return;
+      }
+      button.disabled = true;
+      try {
+        await rankingRequest("POST", "privacy/delete", { installId: data.installId, confirmation: data.profile.name.slice(0, 18) });
+        data.profile.publicMedals = [];
+        data.rankingEligibleMedals = [];
+        saveData(false); renderCustomization();
+        showToast("Perfil, partidas e recordes do ranking excluídos.");
+      } catch (error) { showToast(error.message || "Conecte-se para excluir os dados do ranking."); }
+      finally { button.disabled = false; button.textContent = "Excluir perfil e histórico do ranking"; deleteRankArmedUntil = 0; }
+    });
+
+    $("#erase-everything-button").addEventListener("click", async (event) => {
+      const button = event.currentTarget;
+      if (Date.now() > eraseArmedUntil) {
+        eraseArmedUntil = Date.now() + 5000;
+        button.textContent = "Toque novamente para apagar tudo";
+        setTimeout(() => { if (Date.now() >= eraseArmedUntil) button.textContent = "Apagar todos os dados do aplicativo"; }, 5100);
+        return;
+      }
+      button.disabled = true;
+      try {
+        await rankingRequest("POST", "privacy/delete", { installId: data.installId, confirmation: data.profile.name.slice(0, 18) });
+        if (window.MenteAgilData?.clearAll && !window.MenteAgilData.clearAll()) throw new Error("Não foi possível limpar o armazenamento seguro.");
+        data = freshData();
+        document.body.dataset.theme = "neon";
+        saveData(false);
+        nameInput.value = data.profile.name;
+        rankingNameInput.value = data.profile.name;
+        soundToggle.checked = data.profile.sound;
+        $("#backup-password").value = "";
+        $("#backup-payload").value = "";
+        renderAll();
+        showToast("Todos os dados locais e do ranking foram apagados.");
+      } catch (error) { showToast(error.message || "Conecte-se para concluir a exclusão total."); }
+      finally { button.disabled = false; button.textContent = "Apagar todos os dados do aplicativo"; eraseArmedUntil = 0; }
+    });
   }
 
   function renderAll() {
     renderHome();
     renderHistory();
     renderProgress();
+    renderCustomization();
   }
 
   bindEvents();

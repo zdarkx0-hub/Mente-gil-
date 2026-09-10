@@ -45,10 +45,13 @@ public final class MainActivity extends Activity {
         settings.setDatabaseEnabled(false);
         settings.setAllowContentAccess(false);
         settings.setAllowFileAccess(true);
-        settings.setAllowFileAccessFromFileURLs(true);
+        settings.setAllowFileAccessFromFileURLs(false);
         settings.setAllowUniversalAccessFromFileURLs(false);
         settings.setMixedContentMode(WebSettings.MIXED_CONTENT_NEVER_ALLOW);
         settings.setMediaPlaybackRequiresUserGesture(false);
+        settings.setJavaScriptCanOpenWindowsAutomatically(false);
+        settings.setSupportMultipleWindows(false);
+        settings.setSafeBrowsingEnabled(true);
         settings.setTextZoom(100);
 
         view.addJavascriptInterface(new SecureDataBridge(this), "MenteAgilData");
