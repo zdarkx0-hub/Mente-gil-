@@ -1,4 +1,4 @@
-import { chatGPTSignInPath, chatGPTSignOutPath, getChatGPTUser } from "../chatgpt-auth";
+import { chatGPTSignInPath, chatGPTSignOutPath, getChatGPTUser } from "../../lib/server/chatgpt-auth";
 
 export const dynamic = "force-dynamic";
 

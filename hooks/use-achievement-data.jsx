@@ -2,7 +2,7 @@
 
 import { useCallback, useEffect, useRef, useState } from "react";
 import { ACHIEVEMENTS } from "../shared/achievements.mjs";
-import { privateJsonFetch } from "./offline-client";
+import { privateJsonFetch } from "../lib/client/offline-client";
 
 // One account-scoped request supplies the home flame and the medals page.
 export default function useAchievementData({ viewer, accountState, revision }) {

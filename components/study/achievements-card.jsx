@@ -1,6 +1,6 @@
 "use client";
 
-import { ACHIEVEMENTS } from "../shared/achievements.mjs";
+import { ACHIEVEMENTS } from "../../shared/achievements.mjs";
 import PracticeFlame from "./practice-flame";
 
 export default function AchievementsCard({ viewer, accountState, progress }) {

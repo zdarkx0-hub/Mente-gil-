@@ -5,7 +5,7 @@ import test from "node:test";
 const root = new URL("../", import.meta.url);
 
 test("offline vault encrypts private cache and queued mutations", async () => {
-  const source = await readFile(new URL("app/offline-client.js", root), "utf8");
+  const source = await readFile(new URL("lib/client/offline-client.js", root), "utf8");
   assert.match(source, /AES-GCM/);
   assert.match(source, /generateKey/);
   assert.match(source, /false, \["encrypt", "decrypt"\]/);
@@ -16,7 +16,7 @@ test("offline vault encrypts private cache and queued mutations", async () => {
 });
 
 test("timed training supports local sessions without enabling offline ranking", async () => {
-  const study = await readFile(new URL("app/study-app.jsx", root), "utf8");
+  const study = await readFile(new URL("components/study/study-app.jsx", root), "utf8");
   const worker = await readFile(new URL("worker/achievements.ts", root), "utf8");
   assert.match(study, /trainingSessionOfflineRef/);
   assert.match(study, /crypto\.randomUUID\(\)/);
@@ -29,7 +29,7 @@ test("timed training supports local sessions without enabling offline ranking", 
 
 test("private API snapshots are handled by the encrypted client vault, not the service worker cache", async () => {
   const worker = await readFile(new URL("public/sw.js", root), "utf8");
-  const source = await readFile(new URL("app/offline-client.js", root), "utf8");
+  const source = await readFile(new URL("lib/client/offline-client.js", root), "utf8");
   assert.match(worker, /url\.pathname\.startsWith\("\/api\/"\)/);
   assert.match(source, /apiCacheKey/);
   assert.match(source, /privateJsonFetch/);

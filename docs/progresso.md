@@ -7,12 +7,12 @@
 - `worker/progress.ts`: consultas privadas ao histórico completo da conta.
 - `worker/achievements.ts`: criação e conclusão dos treinos livres.
 - `worker/drills.ts`: conclusão dos treinos específicos e salvamento atômico dos erros.
-- `app/use-achievement-data.jsx`: uma consulta compartilhada pelo início e pelas conquistas.
-- `app/practice-flame.jsx`: apresentação compacta no início e calendário em Conquistas.
-- `app/achievements-card.jsx`: apresentação das medalhas, sem lógica de persistência.
+- `hooks/use-achievement-data.jsx`: uma consulta compartilhada pelo início e pelas conquistas.
+- `components/study/practice-flame.jsx`: apresentação compacta no início e calendário em Conquistas.
+- `components/study/achievements-card.jsx`: apresentação das medalhas, sem lógica de persistência.
 
 As páginas continuam separadas. O layout compartilhado em `app/(study)/layout.jsx`
-mantém os treinos em andamento ao navegar, e `app/study-app.jsx` coordena as sessões.
+mantém os treinos em andamento ao navegar, e `components/study/study-app.jsx` coordena as sessões.
 
 ## Constância diária
 
@@ -77,7 +77,7 @@ não são garantia de ausência absoluta de bugs em todos os dispositivos.
 - `public/manifest.webmanifest`: identidade, cores, ícones e atalhos do aplicativo.
 - `public/sw.js`: cacheia apenas recursos públicos e mantém `/api/` sempre na rede.
 - `public/offline.html`: resposta segura quando uma nova página é aberta sem conexão.
-- `app/pwa-controls.jsx`: registro do aplicativo, instalação no Android e estado da rede.
+- `components/pwa/pwa-controls.jsx`: registro do aplicativo, instalação no Android e estado da rede.
 
 O modo móvel usa a mesma aplicação e o mesmo banco do site. Não existe uma segunda
 cópia dos dados. A navegação vai para a parte inferior em telas pequenas e respeita

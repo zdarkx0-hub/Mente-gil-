@@ -22,7 +22,7 @@ test("service worker keeps private APIs out of Cache Storage and caches the stud
   const worker = await readFile(new URL("public/sw.js", root), "utf8");
   const offline = await readFile(new URL("public/offline.html", root), "utf8");
   const layout = await readFile(new URL("app/layout.jsx", root), "utf8");
-  const controls = await readFile(new URL("app/pwa-controls.jsx", root), "utf8");
+  const controls = await readFile(new URL("components/pwa/pwa-controls.jsx", root), "utf8");
 
   assert.match(worker, /url\.pathname\.startsWith\("\/api\/"\)/);
   assert.match(worker, /APP_SHELL/);

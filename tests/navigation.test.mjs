@@ -32,7 +32,7 @@ test("each study URL renders its own controls while the shared layout retains se
   ];
   for (const [path, expected, unwanted] of pages) {
     const bundled = await build({
-      entryPoints: [new URL("../app/study-app.jsx", import.meta.url).pathname],
+      entryPoints: [new URL("../components/study/study-app.jsx", import.meta.url).pathname],
       bundle: true, write: false, platform: "node", format: "cjs", jsx: "automatic",
       external: ["react", "react/jsx-runtime"],
       plugins: [{ name: "router-context", setup(builder) {

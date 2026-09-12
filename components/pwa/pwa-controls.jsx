@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useRef, useState } from "react";
-import { getPendingSyncCount, syncPendingMutations } from "./offline-client";
+import { getPendingSyncCount, syncPendingMutations } from "../../lib/client/offline-client";
 
 const STUDY_ROUTE = /^\/(?:$|treinar(?:\/especificos)?|revisar|progresso(?:\/conquistas)?|ranking)$/;
 

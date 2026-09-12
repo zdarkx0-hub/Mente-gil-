@@ -4,6 +4,24 @@ on:
   push:
     paths:
       - "app/**"
+      - "components/**"
+      - "hooks/**"
+      - "lib/**"
+      - "worker/**"
+      - "shared/**"
+      - "tests/**"
+      - "public/**"
+      - "database/**"
+      - "drizzle/**"
+      - "package.json"
+      - "package-lock.json"
+      - ".github/workflows/validate.yml"
+  pull_request:
+    paths:
+      - "app/**"
+      - "components/**"
+      - "hooks/**"
+      - "lib/**"
       - "worker/**"
       - "shared/**"
       - "tests/**"

@@ -82,7 +82,7 @@ test("narrow ranges repeat transparently and impossible skills never silently sw
 
 test("setup renders accessible 10/15 choices, defaults to 10 and links to existing navigation", async () => {
   const bundled = await build({
-    entryPoints: [new URL("../app/specific-training.jsx", import.meta.url).pathname],
+    entryPoints: [new URL("../components/study/specific-training.jsx", import.meta.url).pathname],
     bundle: true, write: false, platform: "node", format: "cjs", jsx: "automatic", external: ["react", "react/jsx-runtime"]
   });
   const { createRequire } = await import("node:module");
@@ -98,6 +98,6 @@ test("setup renders accessible 10/15 choices, defaults to 10 and links to existi
   assert.match(html, /<strong>15<\/strong>/);
   assert.match(html, /Sem cronômetro/);
   assert.doesNotMatch(html, /20 questões/);
-  const source = await readFile(new URL("../app/study-app.jsx", import.meta.url), "utf8");
+  const source = await readFile(new URL("../components/study/study-app.jsx", import.meta.url), "utf8");
   assert.match(source, /href="\/treinar\/especificos"/);
 });

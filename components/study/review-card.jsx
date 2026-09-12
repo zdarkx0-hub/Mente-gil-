@@ -1,7 +1,7 @@
 "use client";
 
 import { useCallback, useEffect, useRef, useState } from "react";
-import { postJsonOrQueue, privateJsonFetch, removeCachedReviewError } from "./offline-client";
+import { postJsonOrQueue, privateJsonFetch, removeCachedReviewError } from "../../lib/client/offline-client";
 
 const OPERATION_LABELS = {
   add: "Soma",

@@ -1,5 +1,5 @@
 import "./globals.css";
-import AuthHeader from "./auth-header";
+import AuthHeader from "../components/layout/auth-header";
 
 export const metadata = {
   applicationName: "Mente Ágil",

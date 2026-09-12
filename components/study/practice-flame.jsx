@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { MIN_DAILY_ANSWERS, PRACTICE_TIME_LABEL } from "../shared/practice-streak.mjs";
+import { MIN_DAILY_ANSWERS, PRACTICE_TIME_LABEL } from "../../shared/practice-streak.mjs";
 
 const DAY_STATES = { practiced: "Treino concluído", protected: "Descanso protegido", today: "Ainda dá tempo de treinar", missed: "Sem treino registrado", future: "Dia futuro" };
 

@@ -1,55 +1,46 @@
 # Mente Ágil
 
-**Versão atual: 1.2.0 — Offline First**
+[![Validação](https://github.com/zdarkx0-hub/Mente-gil-/actions/workflows/validate.yml/badge.svg)](https://github.com/zdarkx0-hub/Mente-gil-/actions/workflows/validate.yml)
+[![APK Android](https://github.com/zdarkx0-hub/Mente-gil-/actions/workflows/android-apk.yml/badge.svg)](https://github.com/zdarkx0-hub/Mente-gil-/actions/workflows/android-apk.yml)
 
-Aplicação web de treino de cálculo mental, criada para desenvolver precisão antes de velocidade.
+Aplicação de treino de cálculo mental criada para desenvolver **precisão antes de velocidade**.
 
-**Site publicado:** [mente-agil-vinicius.zdarkx0.chatgpt.site](https://mente-agil-vinicius.zdarkx0.chatgpt.site)
+- **Versão:** 1.2.0 — Offline First
+- **Aplicação:** [mente-agil-vinicius.zdarkx0.chatgpt.site](https://mente-agil-vinicius.zdarkx0.chatgpt.site)
+- **Plataformas:** web, PWA e Android 7.0+
 
-## Funcionalidades
+## Recursos principais
 
-- treinos adaptativos de soma, subtração e multiplicação;
-- níveis do aquecimento até operações com números de 1.000;
+- soma, subtração e multiplicação em níveis progressivos;
 - sessões livres de 1, 2 ou 5 minutos;
-- ranking por operação, duração e nível;
-- treinos específicos sem cronômetro, com 10 ou 15 questões;
-- revisão privada das contas erradas;
-- histórico, evolução e perfil de desempenho;
-- sequência diária com um descanso semanal;
-- sistema de conquistas privadas;
-- instalação como aplicativo no Android, com ícone, tela cheia e atalhos;
-- modo offline-first: treinos livres, treinos específicos já carregados, histórico local e revisão em cache continuam sem internet;
-- fila criptografada AES-GCM para resultados pendentes, sincronizada automaticamente quando a conexão volta;
-- dados privados offline guardados no armazenamento isolado do navegador/WebView; a chave local não é exportável;
-- navegação inferior otimizada para telas pequenas e aviso de conexão;
-- cadastro e proteção dos dados vinculados à conta.
+- treinos específicos de 10 ou 15 questões;
+- revisão privada de erros, histórico e gráficos de evolução;
+- ranking separado por operação, duração e nível;
+- sequência diária e 11 conquistas;
+- modo offline-first após a primeira abertura online;
+- fila local criptografada com AES-GCM para sincronizar resultados pendentes.
 
-## Instalar no Android
+O ranking permanece online porque precisa validar a sessão no servidor.
 
-1. Abra o site no Google Chrome.
-2. Toque em **Instalar app** quando o botão aparecer. Se ele não aparecer, abra o
-   menu do Chrome e escolha **Adicionar à tela inicial** ou **Instalar app**.
-3. Confirme a instalação. O Mente Ágil ficará na tela inicial e abrirá em tela cheia.
+## Organização do repositório
 
-Se o link estiver aberto dentro do ChatGPT ou de outro aplicativo, o botão mostra
-um guia e oferece a opção **Abrir no Chrome**. A versão instalada procura atualizações
-do aplicativo sempre que é aberta.
+| Caminho | Responsabilidade |
+| --- | --- |
+| `app/` | Rotas, layouts e estilos globais da aplicação web |
+| `components/` | Componentes de interface separados por área |
+| `hooks/` | Estado e consultas reutilizáveis do React |
+| `lib/` | Infraestrutura privada do cliente e do servidor |
+| `shared/` | Regras puras compartilhadas entre interface, servidor e testes |
+| `worker/` | API e integração com o Cloudflare Worker |
+| `db/` | Modelo tipado do banco |
+| `drizzle/` | Migrações incrementais do ambiente publicado |
+| `database/` | Schema completo e dados fictícios para instalações novas |
+| `public/` | Manifesto, Service Worker, tela offline e ícones |
+| `android-app/` | Contêiner Android e configuração Gradle |
+| `tests/` | Testes automatizados |
+| `docs/` | Arquitetura, desenvolvimento e regras do produto |
 
-Depois da primeira abertura online, o núcleo de estudo fica disponível sem conexão.
-Resultados concluídos offline são armazenados localmente em uma fila criptografada e
-sincronizados automaticamente quando a internet volta. Senhas, segredos do banco e
-chaves do servidor nunca são colocados no APK. O ranking continua online, pois precisa
-validar a sessão em tempo real. Conquistas e perfil mostram a última cópia privada
-disponível offline e são atualizados após a sincronização.
-
-## Tecnologias
-
-- React 19 e Next.js 16;
-- Vinext e Vite;
-- Cloudflare Workers;
-- Cloudflare D1 (SQLite);
-- Progressive Web App (PWA) com Service Worker;
-- testes nativos do Node.js.
+Veja o mapa completo em [docs/ARQUITETURA.md](docs/ARQUITETURA.md).
 
 ## Executar localmente
 
@@ -61,27 +52,40 @@ cp .env.example .env.local
 npm run dev
 ```
 
-Preencha `USER_DATA_HMAC_SECRET` em `.env.local` com uma chave longa e aleatória. Esse arquivo é ignorado pelo Git e nunca deve ser enviado ao repositório.
+Preencha `USER_DATA_HMAC_SECRET` em `.env.local` com uma chave longa e aleatória. O arquivo é ignorado pelo Git e não deve ser enviado ao repositório.
 
-Para preparar um banco D1 local do zero:
+| Comando | Finalidade |
+| --- | --- |
+| `npm run dev` | Inicia o ambiente de desenvolvimento |
+| `npm test` | Executa os testes automatizados |
+| `npm run build` | Gera a compilação de produção |
+| `npm run check` | Executa testes e compilação |
+| `npm run start` | Inicia a versão compilada |
+
+As instruções detalhadas estão em [docs/DESENVOLVIMENTO.md](docs/DESENVOLVIMENTO.md).
+
+## Android
+
+O código Android fica isolado em [`android-app/`](android-app/). A Action [Build Android APK](https://github.com/zdarkx0-hub/Mente-gil-/actions/workflows/android-apk.yml) compila o APK e publica o arquivo como artefato do workflow; arquivos de build não são versionados.
+
+## Banco de dados
+
+Para criar um banco D1 local com o estado completo atual:
 
 ```bash
 npx wrangler d1 execute mente-agil-ranking --local --file=database/schema.sql
 ```
 
-Os arquivos incrementais usados pelo ambiente publicado estão em [`drizzle/`](drizzle/). O arquivo [`database/schema.sql`](database/schema.sql) representa o estado completo atual do banco para novas instalações. Dados fictícios opcionais estão em [`database/seed.example.sql`](database/seed.example.sql).
+Migrações já publicadas em `drizzle/` são imutáveis. Mudanças futuras devem ser adicionadas em uma nova migração.
 
-O arquivo `.openai/hosting.example.json` é apenas um modelo. Ao publicar sua própria cópia, crie `.openai/hosting.json` com o identificador fornecido pelo ambiente de hospedagem; esse arquivo fica fora do Git.
+## Documentação
 
-## Comandos
-
-```bash
-npm run dev      # desenvolvimento
-npm test         # testes automatizados
-npm run build    # compilação de produção
-npm run start    # execução da versão compilada
-```
+- [Arquitetura](docs/ARQUITETURA.md)
+- [Desenvolvimento](docs/DESENVOLVIMENTO.md)
+- [Progresso, constância e conquistas](docs/progresso.md)
+- [Política de segurança](SECURITY.md)
+- [Como contribuir](CONTRIBUTING.md)
 
 ## Privacidade
 
-O repositório contém apenas código, estrutura do banco e exemplos fictícios. Registros reais de contas, treinos, rankings e segredos do ambiente de produção não são versionados.
+O repositório contém somente código, estrutura do banco e exemplos fictícios. Contas, resultados reais e segredos do ambiente de produção não são versionados.

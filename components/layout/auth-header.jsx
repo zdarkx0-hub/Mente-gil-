@@ -1,7 +1,7 @@
-import { chatGPTSignOutPath, getChatGPTUser } from "./chatgpt-auth";
+import { chatGPTSignOutPath, getChatGPTUser } from "../../lib/server/chatgpt-auth";
 import Link from "next/link";
 import StudyNavigation from "./study-navigation";
-import PwaControls from "./pwa-controls";
+import PwaControls from "../pwa/pwa-controls";
 
 export default async function AuthHeader() {
   const user = await getChatGPTUser();

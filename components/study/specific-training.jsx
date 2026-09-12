@@ -2,8 +2,8 @@
 
 import { useEffect, useRef, useState } from "react";
 import Link from "next/link";
-import { DRILL_SKILLS, drillAnswer, drillLabel, drillSymbol, generateDrill, summarizeDrill } from "../shared/drills.mjs";
-import { postJsonOrQueue, rememberDrillSession } from "./offline-client";
+import { DRILL_SKILLS, drillAnswer, drillLabel, drillSymbol, generateDrill, summarizeDrill } from "../../shared/drills.mjs";
+import { postJsonOrQueue, rememberDrillSession } from "../../lib/client/offline-client";
 
 export default function SpecificTraining({ viewer, accountState, otherSessionActive, onBusyChange, onFeedback, onSaved }) {
   const [config, setConfig] = useState({ operation: "add", skill: "no-carry", count: 10, min: "10", max: "99", table: "7" });

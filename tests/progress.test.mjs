@@ -116,7 +116,7 @@ test("record improvement excludes first attempts, ties, other durations and othe
 });
 
 test("all eleven medals and the accessible week calendar render with account-only data", async () => {
-  const bundled = await build({ entryPoints: [new URL("../app/achievements-card.jsx", import.meta.url).pathname], bundle: true, write: false, format: "cjs", platform: "node", jsx: "automatic", external: ["react", "react/jsx-runtime"],
+  const bundled = await build({ entryPoints: [new URL("../components/study/achievements-card.jsx", import.meta.url).pathname], bundle: true, write: false, format: "cjs", platform: "node", jsx: "automatic", external: ["react", "react/jsx-runtime"],
     plugins: [{ name: "link", setup(builder) {
       builder.onResolve({ filter: /^next\/link$/ }, () => ({ path: "link", namespace: "test" }));
       builder.onLoad({ filter: /.*/, namespace: "test" }, () => ({ contents: 'import React from "react"; export default function Link(props){return React.createElement("a", props, props.children)}' }));
@@ -131,6 +131,6 @@ test("all eleven medals and the accessible week calendar render with account-onl
   assert.match(html, /aria-current="date"/);
   assert.match(html, /Horário de Brasília/);
   assert.equal((html.match(/class="achievement-medal /g) ?? []).length, 11);
-  const source = await readFile(new URL("../app/use-achievement-data.jsx", import.meta.url), "utf8");
+  const source = await readFile(new URL("../hooks/use-achievement-data.jsx", import.meta.url), "utf8");
   assert.doesNotMatch(source, /viewer\.account\?\.userId/);
 });

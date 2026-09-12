@@ -1,8 +1,8 @@
 "use client";
 
 import { useCallback, useEffect, useRef, useState } from "react";
-import { drillLabel } from "../shared/drills.mjs";
-import { privateJsonFetch } from "./offline-client";
+import { drillLabel } from "../../shared/drills.mjs";
+import { privateJsonFetch } from "../../lib/client/offline-client";
 
 export default function DrillHistory({ viewer, accountState, revision }) {
   const [history, setHistory] = useState([]);

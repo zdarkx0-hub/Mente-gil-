@@ -31,9 +31,9 @@ test("retired admin routes cannot access the database or use an old session", as
     assert.equal(response.status, 303);
     assert.equal(response.headers.get("location"), "/");
   }
-  const header = await readFile(new URL("../app/auth-header.jsx", import.meta.url), "utf8");
+  const header = await readFile(new URL("../components/layout/auth-header.jsx", import.meta.url), "utf8");
   assert.doesNotMatch(header, /AdminLink|\/admin/);
-  const navigation = await readFile(new URL("../app/study-navigation.jsx", import.meta.url), "utf8");
+  const navigation = await readFile(new URL("../components/layout/study-navigation.jsx", import.meta.url), "utf8");
   assert.match(navigation, /\["\/revisar", "Revisar"\]/);
   assert.match(header, /Criar conta/);
 });

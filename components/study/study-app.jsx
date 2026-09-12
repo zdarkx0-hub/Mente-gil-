@@ -4,12 +4,12 @@ import { useCallback, useEffect, useId, useMemo, useRef, useState } from "react"
 import ReviewCard from "./review-card";
 import AchievementsCard from "./achievements-card";
 import PracticeFlame from "./practice-flame";
-import useAchievementData from "./use-achievement-data";
+import useAchievementData from "../../hooks/use-achievement-data";
 import SpecificTraining from "./specific-training";
 import DrillHistory from "./drill-history";
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
-import { postJsonOrQueue, privateJsonFetch, readPrivateValue, writePrivateValue } from "./offline-client";
+import { postJsonOrQueue, privateJsonFetch, readPrivateValue, writePrivateValue } from "../../lib/client/offline-client";
 
 const LEVELS = [
   { id: 0, name: "Aquecimento", short: "1", range: "0–10", color: "#6ee7b7" },

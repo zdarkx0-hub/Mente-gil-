@@ -1,0 +1,5 @@
+blank_issues_enabled: false
+contact_links:
+  - name: Relatar vulnerabilidade
+    url: https://github.com/zdarkx0-hub/Mente-gil-/security
+    about: Não publique detalhes de segurança ou dados pessoais em uma issue aberta.
