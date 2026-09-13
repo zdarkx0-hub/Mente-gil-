@@ -1,0 +1,246 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <meta name="theme-color" content="#090e1d">
+  <meta http-equiv="Content-Security-Policy" content="default-src 'self' file:; connect-src 'none'; img-src 'self' data:; media-src 'none'; object-src 'none'; frame-src 'none'; style-src 'self'; script-src 'self'; base-uri 'none'; form-action 'none'">
+  <title>Mente Ágil Mobile</title>
+  <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+  <header class="app-header">
+    <div class="brand" aria-label="Mente Ágil">
+      <span class="brand-mark" aria-hidden="true">M</span>
+      <span>Mente Ágil <small>MOBILE</small></span>
+    </div>
+    <span class="offline-badge"><i aria-hidden="true"></i> Treino offline</span>
+  </header>
+
+  <main id="app" class="app-shell">
+    <section class="screen active" data-screen="train" aria-labelledby="train-title">
+      <div id="setup-view">
+        <div class="intro-row">
+          <div>
+            <p class="eyebrow">TREINO LOCAL</p>
+            <h1 id="train-title">Pronto para calcular?</h1>
+            <p class="muted">Escolha o treino e comece. Nada depende de internet.</p>
+          </div>
+          <div class="flame-card" aria-label="Sequência diária">
+            <span aria-hidden="true">🔥</span>
+            <strong id="streak-value">0</strong>
+            <small>dias</small>
+          </div>
+        </div>
+
+        <div class="panel setup-panel">
+          <fieldset>
+            <legend>Operação</legend>
+            <div class="segmented three" id="operation-options">
+              <button type="button" data-value="add" class="active">Soma</button>
+              <button type="button" data-value="sub">Subtração</button>
+              <button type="button" data-value="mul">Multiplicação</button>
+            </div>
+          </fieldset>
+
+          <fieldset>
+            <legend>Dificuldade</legend>
+            <div class="level-grid" id="level-options">
+              <button type="button" class="level active" data-value="base"><b>01</b><span><strong>Base</strong><small>contas curtas</small></span></button>
+              <button type="button" class="level" data-value="medium"><b>02</b><span><strong>Até 100</strong><small>duas dezenas</small></span></button>
+              <button type="button" class="level" data-value="advanced"><b>03</b><span><strong>Até 1.000</strong><small>desafio avançado</small></span></button>
+            </div>
+          </fieldset>
+
+          <fieldset>
+            <legend>Formato</legend>
+            <div class="mode-grid" id="mode-options">
+              <button type="button" data-mode="count" data-value="10" class="active"><strong>10</strong><small>questões</small></button>
+              <button type="button" data-mode="count" data-value="15"><strong>15</strong><small>questões</small></button>
+              <button type="button" data-mode="time" data-value="60"><strong>1</strong><small>minuto</small></button>
+              <button type="button" data-mode="time" data-value="120"><strong>2</strong><small>minutos</small></button>
+            </div>
+          </fieldset>
+
+          <button type="button" class="primary" id="start-button">Começar treino <span aria-hidden="true">→</span></button>
+        </div>
+      </div>
+
+      <div id="session-view" class="hidden" aria-live="polite">
+        <div class="session-top">
+          <button type="button" class="icon-button" id="stop-button" aria-label="Encerrar treino">×</button>
+          <div><small id="session-label">Soma · Base</small><strong id="session-progress">0 / 10</strong></div>
+          <div class="timer"><small>Tempo</small><strong id="timer-value">00:00</strong></div>
+        </div>
+        <div class="progress-track"><span id="progress-fill"></span></div>
+        <div class="question-card">
+          <p class="question-number" id="question-number">QUESTÃO 1</p>
+          <div class="equation" id="equation">7 + 8</div>
+          <form id="answer-form">
+            <label class="sr-only" for="answer-input">Sua resposta</label>
+            <input id="answer-input" type="number" inputmode="numeric" autocomplete="off" placeholder="Digite a resposta" required>
+            <button type="submit" class="answer-button" aria-label="Confirmar resposta">✓</button>
+          </form>
+          <p id="feedback" class="feedback" aria-live="assertive"></p>
+        </div>
+        <div class="score-row">
+          <span><i class="dot correct"></i><b id="correct-count">0</b> acertos</span>
+          <span><i class="dot wrong"></i><b id="wrong-count">0</b> erros</span>
+        </div>
+      </div>
+
+      <div id="summary-view" class="hidden summary-view">
+        <span class="summary-mark" aria-hidden="true">✓</span>
+        <p class="eyebrow">TREINO CONCLUÍDO</p>
+        <h2 id="summary-title">Bom trabalho!</h2>
+        <div class="summary-grid">
+          <div><strong id="summary-accuracy">0%</strong><small>precisão</small></div>
+          <div><strong id="summary-correct">0</strong><small>acertos</small></div>
+          <div><strong id="summary-time">0s</strong><small>média</small></div>
+        </div>
+        <div id="summary-rank-result" class="summary-rank-result hidden" aria-live="polite"></div>
+        <div id="summary-errors" class="error-review"></div>
+        <button type="button" class="primary" id="train-again-button">Treinar novamente <span aria-hidden="true">→</span></button>
+      </div>
+    </section>
+
+    <section class="screen" data-screen="history" aria-labelledby="history-title">
+      <p class="eyebrow">SEU CAMINHO</p>
+      <h1 id="history-title">Histórico</h1>
+      <p class="muted">Os treinos ficam somente neste aparelho.</p>
+      <div id="history-list" class="stack-list"></div>
+    </section>
+
+    <section class="screen" data-screen="progress" aria-labelledby="progress-title">
+      <p class="eyebrow">EVOLUÇÃO</p>
+      <h1 id="progress-title">Progresso</h1>
+      <div class="stat-grid">
+        <div class="panel stat"><span>Acertos</span><strong id="total-correct">0</strong></div>
+        <div class="panel stat"><span>Precisão</span><strong id="total-accuracy">0%</strong></div>
+        <div class="panel stat"><span>Recorde</span><strong id="best-streak">0 dias</strong></div>
+      </div>
+      <div class="panel chart-panel">
+        <div class="panel-title"><strong>Últimos treinos</strong><small>precisão</small></div>
+        <div id="accuracy-chart" class="bar-chart" aria-label="Precisão dos últimos treinos"></div>
+      </div>
+      <div class="section-title"><h2>Conquistas</h2><span id="achievement-count">0 / 8</span></div>
+      <div id="achievement-list" class="achievement-grid"></div>
+    </section>
+
+    <section class="screen" data-screen="ranking" aria-labelledby="ranking-title">
+      <p class="eyebrow rank-eyebrow">EXCLUSIVO DO APLICATIVO</p>
+      <h1 id="ranking-title">Ranking mobile</h1>
+      <p class="muted">Este placar não se mistura com o ranking do site. As contas ranqueadas são emitidas e validadas pelo servidor, por isso exigem conexão durante toda a partida.</p>
+
+      <div class="rank-identity panel">
+        <label for="ranking-name">Nome público no ranking</label>
+        <input id="ranking-name" maxlength="18" autocomplete="off" placeholder="Escolha seu nome">
+      </div>
+
+      <div class="panel ranking-panel">
+        <fieldset>
+          <legend>Operação</legend>
+          <div class="segmented three rank-filter" id="rank-operation-options">
+            <button type="button" data-value="add" class="active">Soma</button>
+            <button type="button" data-value="sub">Subtração</button>
+            <button type="button" data-value="mul">Multiplicação</button>
+          </div>
+        </fieldset>
+        <div class="rank-split">
+          <fieldset>
+            <legend>Dificuldade</legend>
+            <div class="segmented vertical rank-filter" id="rank-level-options">
+              <button type="button" data-value="base" class="active">Base</button>
+              <button type="button" data-value="medium">Até 100</button>
+              <button type="button" data-value="advanced">Até 1.000</button>
+            </div>
+          </fieldset>
+          <fieldset>
+            <legend>Tempo</legend>
+            <div class="segmented vertical rank-filter" id="rank-duration-options">
+              <button type="button" data-value="60" class="active">1 minuto</button>
+              <button type="button" data-value="120">2 minutos</button>
+            </div>
+          </fieldset>
+        </div>
+
+        <button type="button" class="primary rank-start" id="rank-start-button">Jogar esta categoria <span aria-hidden="true">↗</span></button>
+      </div>
+
+      <div class="rank-header">
+        <div><strong>Melhores resultados</strong><small id="rank-category-label">Soma · Base · 1 min</small></div>
+        <button type="button" id="rank-refresh-button">Atualizar</button>
+      </div>
+      <div id="ranking-list" class="ranking-list"><div class="empty-state">Conecte-se para carregar o ranking mobile.</div></div>
+    </section>
+
+    <section class="screen" data-screen="settings" aria-labelledby="settings-title">
+      <p class="eyebrow">NO APARELHO</p>
+      <h1 id="settings-title">Ajustes</h1>
+      <div class="panel settings-panel">
+        <label for="player-name">Seu nome</label>
+        <input id="player-name" maxlength="24" autocomplete="off" placeholder="Jogador">
+        <label class="switch-row" for="sound-toggle">
+          <span><strong>Sons</strong><small>acerto e erro</small></span>
+          <input id="sound-toggle" type="checkbox" checked>
+        </label>
+
+        <section class="customization-section" aria-labelledby="themes-title">
+          <div class="settings-heading"><div><strong id="themes-title">Temas</strong><small>Escolha uma aparência conquistada</small></div><span id="theme-progress">1 / 4</span></div>
+          <div id="theme-grid" class="theme-grid"></div>
+        </section>
+
+        <section class="customization-section" aria-labelledby="medals-title">
+          <div class="settings-heading"><div><strong id="medals-title">Coleção de medalhas</strong><small>Conquistas locais e competitivas</small></div><span id="medal-progress">0</span></div>
+          <p class="settings-copy">Medalhas com escudo são confirmadas pelo servidor. Selecione até três delas para aparecerem no ranking mobile.</p>
+          <div id="medal-grid" class="medal-grid"></div>
+          <button type="button" class="secondary-action" id="sync-medals-button">Sincronizar medalhas do ranking</button>
+        </section>
+
+        <div class="security-note"><span aria-hidden="true">◆</span><p><strong>Dados protegidos</strong><br>Seu histórico é criptografado e guardado no espaço privado do aplicativo.</p></div>
+        <div class="independent-note"><span aria-hidden="true">M</span><p><strong>Uma edição independente</strong><br>O aplicativo e o site evoluem separadamente. Uma mudança feita no site pode não aparecer aqui, e o ranking mobile permanece separado.</p></div>
+
+        <details class="privacy-details">
+          <summary>Privacidade e seus dados</summary>
+          <div>
+            <p>Nome, preferências, temas, medalhas locais e histórico ficam cifrados neste aparelho. Ao entrar no ranking, enviamos somente uma identificação aleatória da instalação, o apelido, a categoria e as respostas da partida. O ranking publica apenas apelido, resultado e medalhas competitivas escolhidas.</p>
+            <p>Não usamos publicidade, localização, contatos, câmera ou microfone. O treino comum funciona sem internet.</p>
+          </div>
+        </details>
+
+        <section class="backup-section" aria-labelledby="backup-title">
+          <div class="settings-heading"><div><strong id="backup-title">Backup criptografado</strong><small>Proteja seu histórico contra perda do aparelho</small></div></div>
+          <label for="backup-password">Senha do backup, com pelo menos 8 caracteres</label>
+          <input id="backup-password" type="password" minlength="8" maxlength="128" autocomplete="new-password" placeholder="Crie uma senha forte">
+          <div class="backup-actions"><button type="button" id="export-backup-button">Gerar backup local</button><button type="button" id="export-ranking-data-button">Exportar dados do ranking</button><button type="button" id="import-backup-button">Importar backup local</button></div>
+          <label for="backup-payload">Código do backup criptografado</label>
+          <textarea id="backup-payload" rows="4" spellcheck="false" autocomplete="off" placeholder="O código aparecerá aqui ou cole um backup para importar"></textarea>
+          <button type="button" class="secondary-action" id="copy-backup-button">Copiar código</button>
+          <small>Guarde a senha separadamente. Sem ela, nem o Mente Ágil consegue abrir o backup.</small>
+        </section>
+
+        <section class="danger-zone" aria-labelledby="danger-title">
+          <strong id="danger-title">Exclusão de dados</strong>
+          <p>O histórico local e o perfil público do ranking são controles diferentes.</p>
+          <button type="button" class="danger-button" id="clear-data-button">Apagar somente o histórico local</button>
+          <button type="button" class="danger-button" id="delete-ranking-button">Excluir perfil e histórico do ranking</button>
+          <button type="button" class="danger-button strongest" id="erase-everything-button">Apagar todos os dados do aplicativo</button>
+        </section>
+      </div>
+      <p class="version">Mente Ágil Mobile · versão 1.2.0</p>
+    </section>
+  </main>
+
+  <nav class="bottom-nav" aria-label="Navegação principal">
+    <button type="button" class="active" data-target="train"><span aria-hidden="true">＋</span><small>Treinar</small></button>
+    <button type="button" data-target="history"><span aria-hidden="true">≡</span><small>Histórico</small></button>
+    <button type="button" data-target="ranking"><span aria-hidden="true">♛</span><small>Ranking</small></button>
+    <button type="button" data-target="progress"><span aria-hidden="true">↗</span><small>Progresso</small></button>
+    <button type="button" data-target="settings"><span aria-hidden="true">⚙</span><small>Ajustes</small></button>
+  </nav>
+
+  <div id="toast" class="toast" role="status" aria-live="polite"></div>
+  <script src="core.js"></script>
+  <script src="app.js"></script>
+</body>
+</html>
