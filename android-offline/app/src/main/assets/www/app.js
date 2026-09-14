@@ -53,7 +53,7 @@
   const RANKING_MEDAL_ICONS = Object.fromEntries(RANKING_MEDALS.map((item) => [item.id, item.icon]));
 
   let data = loadData();
-  document.body.dataset.theme = data.profile.theme;
+  applyTheme(data.profile.theme);
   let selection = { operation: "add", level: "base", mode: "count", goal: 10 };
   let rankSelection = { operation: "add", level: "base", duration: 60 };
   let session = null;
@@ -70,6 +70,12 @@
 
   const $ = (selector) => document.querySelector(selector);
   const $$ = (selector) => Array.from(document.querySelectorAll(selector));
+
+  function applyTheme(theme) {
+    // Keep the viewport background and every component on the same palette.
+    document.documentElement.dataset.theme = theme;
+    document.body.dataset.theme = theme;
+  }
 
   function loadData() {
     try {
@@ -734,7 +740,7 @@
     const availableThemes = THEMES.filter((item) => item.available(stats, data.sessions));
     if (!availableThemes.some((item) => item.id === data.profile.theme)) {
       data.profile.theme = "neon";
-      document.body.dataset.theme = "neon";
+      applyTheme("neon");
       saveData(false);
     }
     $("#theme-progress").textContent = availableThemes.length + " / " + THEMES.length;
@@ -756,7 +762,7 @@
       card.addEventListener("click", () => {
         if (!unlocked) return;
         data.profile.theme = theme.id;
-        document.body.dataset.theme = theme.id;
+        applyTheme(theme.id);
         saveData();
         renderCustomization();
         showToast("Tema " + theme.name + " ativado.");
@@ -987,7 +993,7 @@
         const restored = raw ? sanitizeImportedBackup(JSON.parse(raw)) : null;
         if (!restored) throw new Error("invalid");
         data = restored;
-        document.body.dataset.theme = data.profile.theme;
+        applyTheme(data.profile.theme);
         saveData();
         nameInput.value = data.profile.name;
         rankingNameInput.value = data.profile.name.slice(0, 18);
@@ -1057,7 +1063,7 @@
         await rankingRequest("POST", "privacy/delete", { installId: data.installId, confirmation: data.profile.name.slice(0, 18) });
         if (window.MenteAgilData?.clearAll && !window.MenteAgilData.clearAll()) throw new Error("Não foi possível limpar o armazenamento seguro.");
         data = freshData();
-        document.body.dataset.theme = "neon";
+        applyTheme("neon");
         saveData(false);
         nameInput.value = data.profile.name;
         rankingNameInput.value = data.profile.name;

@@ -14,7 +14,7 @@
       <span class="brand-mark" aria-hidden="true">M</span>
       <span>Mente Ágil <small>MOBILE</small></span>
     </div>
-    <span class="offline-badge"><i aria-hidden="true"></i> Treino offline</span>
+    <span id="connection-status" class="connection-badge" data-state="unknown" role="status" aria-live="polite" aria-atomic="true"><i aria-hidden="true"></i><span id="connection-label">Verificando…</span></span>
   </header>
 
   <main id="app" class="app-shell">
@@ -227,7 +227,7 @@
           <button type="button" class="danger-button strongest" id="erase-everything-button">Apagar todos os dados do aplicativo</button>
         </section>
       </div>
-      <p class="version">Mente Ágil Mobile · versão 1.2.0</p>
+      <p class="version">Mente Ágil — Temas · versão 1.2.1</p>
     </section>
   </main>
 
@@ -241,6 +241,7 @@
 
   <div id="toast" class="toast" role="status" aria-live="polite"></div>
   <script src="core.js"></script>
+  <script src="connectivity.js"></script>
   <script src="app.js"></script>
 </body>
 </html>

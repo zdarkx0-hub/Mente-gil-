@@ -4,7 +4,10 @@ import android.app.Activity;
 import android.graphics.Color;
 import android.net.Uri;
 import android.os.Bundle;
+import android.os.Build;
 import android.view.Window;
+import android.view.WindowInsets;
+import android.widget.FrameLayout;
 import android.webkit.WebResourceRequest;
 import android.webkit.WebResourceResponse;
 import android.webkit.WebSettings;
@@ -17,6 +20,7 @@ import java.nio.charset.StandardCharsets;
 public final class MainActivity extends Activity {
     private WebView webView;
     private MobileRankingBridge mobileRankingBridge;
+    private ConnectivityBridge connectivityBridge;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -29,7 +33,22 @@ public final class MainActivity extends Activity {
         webView = new WebView(this);
         webView.setBackgroundColor(Color.rgb(9, 14, 29));
         configureWebView(webView);
-        setContentView(webView);
+        FrameLayout container = new FrameLayout(this);
+        container.setBackgroundColor(Color.rgb(9, 14, 29));
+        container.addView(webView, new FrameLayout.LayoutParams(-1, -1));
+        if (Build.VERSION.SDK_INT >= 30) {
+            // Android 15 draws edge-to-edge by default. Keep controls clear of
+            // status/navigation bars, display cutouts, and the soft keyboard.
+            window.setDecorFitsSystemWindows(false);
+            container.setOnApplyWindowInsetsListener((view, insets) -> {
+                android.graphics.Insets safe = insets.getInsets(
+                    WindowInsets.Type.systemBars() | WindowInsets.Type.displayCutout()
+                        | WindowInsets.Type.ime());
+                view.setPadding(safe.left, safe.top, safe.right, safe.bottom);
+                return WindowInsets.CONSUMED;
+            });
+        }
+        setContentView(container);
 
         if (savedInstanceState == null) {
             webView.loadUrl("file:///android_asset/www/index.html");
@@ -57,7 +76,23 @@ public final class MainActivity extends Activity {
         view.addJavascriptInterface(new SecureDataBridge(this), "MenteAgilData");
         mobileRankingBridge = new MobileRankingBridge(view);
         view.addJavascriptInterface(mobileRankingBridge, "MenteAgilRanking");
-        view.setWebViewClient(new LocalOnlyWebViewClient());
+        connectivityBridge = new ConnectivityBridge(this, view);
+        view.addJavascriptInterface(connectivityBridge, "MenteAgilConnectivity");
+        view.setWebViewClient(new LocalOnlyWebViewClient() {
+            @Override public void onPageFinished(WebView view, String url) {
+                connectivityBridge.publish();
+            }
+        });
+    }
+
+    @Override protected void onResume() {
+        super.onResume();
+        if (connectivityBridge != null) connectivityBridge.start();
+    }
+
+    @Override protected void onPause() {
+        if (connectivityBridge != null) connectivityBridge.stop();
+        super.onPause();
     }
 
     @Override
@@ -80,13 +115,15 @@ public final class MainActivity extends Activity {
         if (webView != null) {
             webView.removeJavascriptInterface("MenteAgilData");
             webView.removeJavascriptInterface("MenteAgilRanking");
+            webView.removeJavascriptInterface("MenteAgilConnectivity");
+            if (connectivityBridge != null) connectivityBridge.stop();
             if (mobileRankingBridge != null) mobileRankingBridge.close();
             webView.destroy();
         }
         super.onDestroy();
     }
 
-    private static final class LocalOnlyWebViewClient extends WebViewClient {
+    private static class LocalOnlyWebViewClient extends WebViewClient {
         private static boolean isLocal(Uri uri) {
             return "file".equals(uri.getScheme())
                 && uri.getPath() != null
