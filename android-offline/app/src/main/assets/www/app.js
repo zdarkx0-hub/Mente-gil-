@@ -25,9 +25,9 @@
   ];
   const THEMES = [
     { id: "neon", name: "Pulso Neon", unlock: "Tema inicial", available: () => true },
-    { id: "flames", name: "Chamas", unlock: "Pratique 7 dias seguidos", available: (stats) => stats.streak.best >= 7 },
-    { id: "crystal", name: "Cristal", unlock: "Faça 95% em 5 treinos", available: (_stats, sessions) => sessions.filter((item) => item.answers.length >= 10 && core.accuracy(item.correct, item.wrong) >= 95).length >= 5 },
-    { id: "eclipse", name: "Eclipse", unlock: "Alcance 1.000 acertos", available: (stats) => stats.correct >= 1000 }
+    { id: "flames", name: "Chamas", unlock: "Liberado nesta demonstração", available: () => true },
+    { id: "crystal", name: "Cristal", unlock: "Liberado nesta demonstração", available: () => true },
+    { id: "eclipse", name: "Eclipse", unlock: "Liberado nesta demonstração", available: () => true }
   ];
   const LOCAL_MEDALS = [
     { id: "first", icon: "✦", name: "Primeiro passo", detail: "Conclua 1 treino", available: (_stats, sessions) => sessions.length >= 1 },
