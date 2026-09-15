@@ -88,7 +88,8 @@ def main():
         run(["java", "-jar", str(args.apksigner), "sign", "--ks", str(args.keystore),
              "--ks-key-alias", identity["keyAlias"],
              "--ks-pass", "file:" + str(args.password_file),
-             "--key-pass", "file:" + str(args.password_file),
+             # PKCS12 uses the store password for its key. Passing the same file
+             # twice makes apksigner consume a second (nonexistent) password line.
              "--min-sdk-version", "26", "--v1-signing-enabled", "true",
              "--v2-signing-enabled", "true", "--v3-signing-enabled", "true",
              "--v4-signing-enabled", "false", "--out", str(signed), str(args.input)])
