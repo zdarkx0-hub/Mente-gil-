@@ -7,18 +7,23 @@ android {
     compileSdk 35
 
     defaultConfig {
-        applicationId "com.menteagil.offline.preview4"
+        // Permanent beta identity: never change this for a routine update.
+        applicationId "com.menteagil.offline.beta"
         minSdk 26
         targetSdk 35
-        versionCode 7
-        versionName "1.2.4-theme-preview"
+        versionCode 8
+        versionName "1.2.5-beta"
     }
 
     buildTypes {
         debug {
+            applicationIdSuffix ".dev"
+            versionNameSuffix "-dev"
             minifyEnabled false
         }
         release {
+            // CI produces an unsigned APK. scripts/sign_beta.py signs it privately.
+            debuggable false
             minifyEnabled false
             proguardFiles getDefaultProguardFile("proguard-android-optimize.txt"), "proguard-rules.pro"
         }

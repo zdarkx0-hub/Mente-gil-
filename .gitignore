@@ -10,3 +10,15 @@ npm-debug.log*
 .env.local
 .env.*.local
 .openai/hosting.json
+
+# Private signing material and generated Android artifacts.
+*.jks
+*.keystore
+*.p12
+*-Password.txt
+signing-private/
+*.apk
+*.idsig
+android-offline/.gradle/
+android-offline/app/build/
+__pycache__/
