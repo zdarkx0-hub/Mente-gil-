@@ -724,7 +724,7 @@
       const title = document.createElement("strong");
       title.textContent = achievement.title;
       const description = document.createElement("small");
-      description.textContent = achievement.description;
+      description.textContent = (unlocked ? "Conquistada · " : "Bloqueada · ") + achievement.description;
       card.append(icon, title, description);
       host.appendChild(card);
     });
@@ -786,7 +786,7 @@
       if (unlocked) card.addEventListener("click", () => togglePublicMedal(medal.id));
       medals.appendChild(card);
     });
-    $("#medal-progress").textContent = unlockedCount + " conquistadas";
+    $("#medal-progress").textContent = unlockedCount + (unlockedCount === 1 ? " conquistada" : " conquistadas");
   }
 
   function medalCard(medal, unlocked, verified, selected = false) {
@@ -800,7 +800,7 @@
     const name = document.createElement("strong"); name.textContent = medal.name + (verified ? " ◆" : "");
     if (verified) name.classList.add("verified-mark");
     const detail = document.createElement("small");
-    detail.textContent = unlocked ? (verified ? (selected ? "Selecionada para o ranking" : "Verificada · toque para selecionar") : "Conquistada neste aparelho") : medal.detail;
+    detail.textContent = unlocked ? (verified ? (selected ? "Selecionada para o ranking" : "Verificada · toque para selecionar") : "Conquistada neste aparelho") : "Bloqueada · " + medal.detail;
     info.append(name, detail); card.append(icon, info);
     return card;
   }
