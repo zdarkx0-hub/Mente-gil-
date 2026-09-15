@@ -27,7 +27,8 @@
     { id: "neon", name: "Pulso Neon", unlock: "Tema inicial", available: () => true },
     { id: "flames", name: "Chamas", unlock: "Liberado nesta demonstração", available: () => true },
     { id: "crystal", name: "Cristal", unlock: "Liberado nesta demonstração", available: () => true },
-    { id: "eclipse", name: "Eclipse", unlock: "Liberado nesta demonstração", available: () => true }
+    { id: "eclipse", name: "Eclipse", unlock: "Liberado nesta demonstração", available: () => true },
+    { id: "rose", name: "Rosa Aurora", unlock: "Liberado nesta demonstração", available: () => true }
   ];
   const LOCAL_MEDALS = [
     { id: "first", icon: "✦", name: "Primeiro passo", detail: "Conclua 1 treino", available: (_stats, sessions) => sessions.length >= 1 },

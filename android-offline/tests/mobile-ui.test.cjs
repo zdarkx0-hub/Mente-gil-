@@ -30,18 +30,19 @@ test("mobile layout uses five destinations and keeps large touch targets", () =>
   assert.match(css, /--lime: #c8ff64/);
 });
 
-test("version 1.2 exposes four earned themes and a verified medal collection", () => {
+test("theme preview exposes five themes and a verified medal collection", () => {
   const html = read("app/src/main/assets/www/index.html");
   const app = read("app/src/main/assets/www/app.js");
   const css = read("app/src/main/assets/www/styles.css");
   assert.match(html, /id="theme-grid"/);
   assert.match(html, /id="medal-grid"/);
-  for (const theme of ["neon", "flames", "crystal", "eclipse"]) {
+  for (const theme of ["neon", "flames", "crystal", "eclipse", "rose"]) {
     assert.match(app, new RegExp('id: "' + theme + '"'));
   }
   assert.match(css, /body\[data-theme="flames"\]/);
   assert.match(css, /body\[data-theme="crystal"\]/);
   assert.match(css, /body\[data-theme="eclipse"\]/);
+  assert.match(css, /body\[data-theme="rose"\]/);
   assert.match(app, /Escolha no máximo três medalhas/);
   assert.match(app, /rankingEligibleMedals/);
 });

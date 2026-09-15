@@ -7,11 +7,11 @@ android {
     compileSdk 35
 
     defaultConfig {
-        applicationId "com.menteagil.offline.preview3"
+        applicationId "com.menteagil.offline.preview4"
         minSdk 26
         targetSdk 35
-        versionCode 6
-        versionName "1.2.3-theme-preview"
+        versionCode 7
+        versionName "1.2.4-theme-preview"
     }
 
     buildTypes {
