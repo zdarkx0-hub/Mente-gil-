@@ -95,6 +95,7 @@
       return {
         version: 3,
         installId: validInstallId(parsed.installId) ? parsed.installId : createInstallId(),
+        ...(typeof parsed.accountId === "string" ? { accountId: parsed.accountId, publicId: String(parsed.publicId || ""), syncedAt: Number(parsed.syncedAt) || 0 } : {}),
         profile: {
           name: typeof parsed.profile?.name === "string" ? parsed.profile.name.slice(0, 24) : "Jogador",
           sound: parsed.profile?.sound !== false,
@@ -151,6 +152,7 @@
     try {
       if (window.MenteAgilData && typeof window.MenteAgilData.save === "function") {
         saved = window.MenteAgilData.save(json);
+        if (saved && window.MenteAgilData.saveAccountSlot) window.MenteAgilData.saveAccountSlot(json);
       } else if (window.localStorage) {
         window.localStorage.setItem("mente-agil-offline-v1", json);
         saved = true;
@@ -222,11 +224,12 @@
       return;
     }
     $$(".screen").forEach((screen) => screen.classList.toggle("active", screen.dataset.screen === target));
-    $$(".bottom-nav button").forEach((button) => button.classList.toggle("active", button.dataset.target === target));
+    $$(".bottom-nav button").forEach((button) => button.classList.toggle("active", button.dataset.target === (target === "profile" ? "settings" : target)));
     if (target === "history") renderHistory();
     if (target === "progress") renderProgress();
     if (target === "ranking") loadRanking();
     if (target === "settings") { renderCustomization(); loadRankingMedals(); }
+    if (target === "profile") window.MenteAccount?.render();
     window.scrollTo(0, 0);
   }
 
@@ -451,6 +454,7 @@
     };
     data.sessions.push(finished);
     saveData();
+    window.MenteAccount?.scheduleSync();
     showSummary(finished);
     if (completed.ranked) submitRankedSession(completed, finished);
   }
@@ -562,10 +566,9 @@
       host.appendChild(empty);
       return;
     }
-    const myName = data.profile.name.trim().toLocaleLowerCase("pt-BR");
     entries.forEach((entry) => {
       const card = document.createElement("article");
-      card.className = "rank-item" + (String(entry.nickname).toLocaleLowerCase("pt-BR") === myName ? " is-me" : "");
+      card.className = "rank-item" + (data.publicId && entry.publicId === data.publicId ? " is-me" : "");
       const position = document.createElement("span");
       position.className = "rank-position";
       position.textContent = String(entry.position);
@@ -583,7 +586,7 @@
       });
       if (medals.childNodes.length) nickname.appendChild(medals);
       const details = document.createElement("small");
-      details.textContent = entry.correct + " acertos · sequência " + entry.bestStreak;
+      details.textContent = (entry.publicId ? entry.publicId + " · " : "") + entry.correct + " acertos · sequência " + entry.bestStreak;
       player.append(nickname, details);
       const score = document.createElement("span");
       score.className = "rank-score";
@@ -597,8 +600,11 @@
   }
 
   async function startRankedSession() {
+    if (!window.MenteAgilAccount?.connected() || !data.accountId) {
+      switchScreen("profile"); showToast("Conecte sua conta para participar do ranking."); return;
+    }
     const button = $("#rank-start-button");
-    const nickname = $("#ranking-name").value.trim().slice(0, 18);
+    const nickname = data.profile.name;
     if (nickname.length < 2) {
       showToast("Escolha um nome com pelo menos 2 caracteres.");
       $("#ranking-name").focus();
@@ -861,6 +867,7 @@
     return {
       version: 3,
       installId: data.installId,
+      ...(data.accountId ? { accountId: data.accountId, publicId: data.publicId, syncedAt: data.syncedAt || 0 } : {}),
       profile: {
         name: typeof parsed.profile?.name === "string" ? parsed.profile.name.slice(0, 24) : data.profile.name,
         sound: parsed.profile?.sound !== false,
@@ -956,23 +963,7 @@
     const nameInput = $("#player-name");
     nameInput.value = data.profile.name;
     const rankingNameInput = $("#ranking-name");
-    rankingNameInput.value = data.profile.name.slice(0, 18);
-    nameInput.addEventListener("input", () => {
-      clearTimeout(nameSaveTimer);
-      nameSaveTimer = setTimeout(() => {
-        data.profile.name = nameInput.value.trim().slice(0, 24) || "Jogador";
-        rankingNameInput.value = data.profile.name.slice(0, 18);
-        saveData();
-      }, 350);
-    });
-    rankingNameInput.addEventListener("input", () => {
-      clearTimeout(nameSaveTimer);
-      nameSaveTimer = setTimeout(() => {
-        data.profile.name = rankingNameInput.value.trim().slice(0, 18) || "Jogador";
-        nameInput.value = data.profile.name;
-        saveData();
-      }, 350);
-    });
+    rankingNameInput.value = data.profile.name;
 
     const soundToggle = $("#sound-toggle");
     soundToggle.checked = data.profile.sound;
@@ -997,10 +988,11 @@
         applyTheme(data.profile.theme);
         saveData();
         nameInput.value = data.profile.name;
-        rankingNameInput.value = data.profile.name.slice(0, 18);
+        rankingNameInput.value = data.profile.name;
         soundToggle.checked = data.profile.sound;
         renderAll();
         showToast("Backup importado com segurança.");
+        window.MenteAccount?.render(); window.MenteAccount?.scheduleSync();
       } catch (_) { showToast("Backup ou senha inválidos."); }
     });
     $("#export-ranking-data-button").addEventListener("click", async () => {
@@ -1026,7 +1018,7 @@
       button.textContent = "Apagar somente o histórico local";
       clearArmedUntil = 0;
       nameInput.value = data.profile.name;
-      rankingNameInput.value = data.profile.name.slice(0, 18);
+      rankingNameInput.value = data.profile.name;
       soundToggle.checked = data.profile.sound;
       renderAll();
       showToast("Histórico apagado deste aparelho.");
@@ -1042,7 +1034,7 @@
       }
       button.disabled = true;
       try {
-        await rankingRequest("POST", "privacy/delete", { installId: data.installId, confirmation: data.profile.name.slice(0, 18) });
+        await rankingRequest("POST", "privacy/delete", { installId: data.installId, confirmation: data.profile.name });
         data.profile.publicMedals = [];
         data.rankingEligibleMedals = [];
         saveData(false); renderCustomization();
@@ -1061,7 +1053,7 @@
       }
       button.disabled = true;
       try {
-        await rankingRequest("POST", "privacy/delete", { installId: data.installId, confirmation: data.profile.name.slice(0, 18) });
+        if (window.MenteAgilAccount?.connected()) await rankingRequest("POST", "privacy/delete", { installId: data.installId, confirmation: data.profile.name });
         if (window.MenteAgilData?.clearAll && !window.MenteAgilData.clearAll()) throw new Error("Não foi possível limpar o armazenamento seguro.");
         data = freshData();
         applyTheme("neon");
@@ -1072,6 +1064,7 @@
         $("#backup-password").value = "";
         $("#backup-payload").value = "";
         renderAll();
+        window.MenteAccount?.render();
         showToast("Todos os dados locais e do ranking foram apagados.");
       } catch (error) { showToast(error.message || "Conecte-se para concluir a exclusão total."); }
       finally { button.disabled = false; button.textContent = "Apagar todos os dados do aplicativo"; eraseArmedUntil = 0; }
@@ -1084,6 +1077,54 @@
     renderProgress();
     renderCustomization();
   }
+
+  window.MenteApp = {
+    snapshot: () => structuredCloneSafe(data),
+    stats: () => core.summarize(data.sessions),
+    notice: showToast,
+    screen: switchScreen,
+    activeSession: () => Boolean(session),
+    setName(name) {
+      data.profile.name = name;
+      $("#player-name").value = name; $("#ranking-name").value = name;
+      saveData();
+    },
+    connect(account) {
+      if (data.accountId && data.accountId !== account.id) {
+        const slot = window.MenteAgilData?.loadAccountSlot() || "";
+        if (slot) {
+          const restored = JSON.parse(slot);
+          if (!restored.profile || !Array.isArray(restored.sessions) || restored.accountId !== account.id) throw new Error("Não foi possível abrir o progresso desta conta.");
+          data = restored;
+        } else data = freshData();
+      } else if (!data.accountId) {
+        const slot = window.MenteAgilData?.loadAccountSlot() || "";
+        if (slot) {
+          const restored = JSON.parse(slot);
+          if (!restored.profile || !Array.isArray(restored.sessions) || restored.accountId !== account.id) throw new Error("Não foi possível abrir o progresso desta conta.");
+          const merged = new Map([...data.sessions, ...restored.sessions].map(s => [s.id, s]));
+          restored.sessions = [...merged.values()].sort((a,b) => a.startedAt-b.startedAt).slice(-100);
+          data = restored;
+        }
+        window.MenteAgilData?.adoptGuestPhoto?.();
+      }
+      data.accountId = account.id; data.publicId = account.publicId; data.profile.name = account.name;
+      applyTheme(data.profile.theme); saveData();
+      $("#player-name").value = account.name; $("#ranking-name").value = account.name;
+      $("#sound-toggle").checked = data.profile.sound;
+      renderAll();
+    },
+    disconnect() {
+      data = freshData(); applyTheme(data.profile.theme); saveData();
+      $("#player-name").value = data.profile.name; $("#ranking-name").value = data.profile.name;
+      $("#sound-toggle").checked = data.profile.sound; renderAll();
+    },
+    mergeHistory(sessions, syncedAt) {
+      const merged = new Map([...sessions.filter(validSession), ...data.sessions].map(s => [s.id, s]));
+      data.sessions = [...merged.values()].sort((a,b) => a.startedAt-b.startedAt).slice(-100);
+      data.syncedAt = syncedAt; saveData(); renderAll();
+    }
+  };
 
   bindEvents();
   saveData(false);

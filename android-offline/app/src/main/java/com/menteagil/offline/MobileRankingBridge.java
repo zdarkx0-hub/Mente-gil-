@@ -28,10 +28,12 @@ public final class MobileRankingBridge {
     );
 
     private final WebView webView;
+    private final SecureDataBridge store;
     private final ExecutorService executor = Executors.newSingleThreadExecutor();
 
-    MobileRankingBridge(WebView webView) {
+    MobileRankingBridge(WebView webView, SecureDataBridge store) {
         this.webView = webView;
+        this.store = store;
     }
 
     @JavascriptInterface
@@ -84,6 +86,8 @@ public final class MobileRankingBridge {
         connection.setRequestProperty("Accept", "application/json");
         connection.setRequestProperty("X-Mente-Agil-Mobile", "1");
         connection.setRequestProperty("User-Agent", "MenteAgilMobile/1.2.0 Android");
+        String token = store.loadValue("account_token");
+        if (!token.isEmpty()) connection.setRequestProperty("Authorization", "Bearer " + token);
         if (body != null) {
             connection.setDoOutput(true);
             connection.setRequestProperty("Content-Type", "application/json; charset=utf-8");

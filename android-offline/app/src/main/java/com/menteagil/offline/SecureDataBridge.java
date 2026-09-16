@@ -36,7 +36,11 @@ public final class SecureDataBridge {
 
     @JavascriptInterface
     public synchronized String load() {
-        String encoded = preferences.getString(DATA, "");
+        return loadValue(DATA);
+    }
+
+    synchronized String loadValue(String name) {
+        String encoded = preferences.getString(name, "");
         if (encoded == null || encoded.isEmpty()) return "";
 
         try {
@@ -55,19 +59,68 @@ public final class SecureDataBridge {
 
     @JavascriptInterface
     public synchronized boolean save(String json) {
+        return saveValue(DATA, json);
+    }
+
+    synchronized boolean saveValue(String name, String json) {
         if (json == null || json.length() > MAX_JSON_LENGTH) return false;
 
         try {
-            Cipher cipher = Cipher.getInstance("AES/GCM/NoPadding");
-            cipher.init(Cipher.ENCRYPT_MODE, getOrCreateKey());
-            byte[] encrypted = cipher.doFinal(json.getBytes(StandardCharsets.UTF_8));
-            String payload = Base64.encodeToString(cipher.getIV(), Base64.NO_WRAP)
-                + "."
-                + Base64.encodeToString(encrypted, Base64.NO_WRAP);
-            return preferences.edit().putString(DATA, payload).commit();
+            String payload = encodeValue(json);
+            return preferences.edit().putString(name, payload).commit();
         } catch (Exception ignored) {
             return false;
         }
+    }
+
+    private String encodeValue(String value) throws Exception {
+        Cipher cipher=Cipher.getInstance("AES/GCM/NoPadding");
+        cipher.init(Cipher.ENCRYPT_MODE,getOrCreateKey());
+        byte[] encrypted=cipher.doFinal(value.getBytes(StandardCharsets.UTF_8));
+        return Base64.encodeToString(cipher.getIV(),Base64.NO_WRAP)+"."+Base64.encodeToString(encrypted,Base64.NO_WRAP);
+    }
+
+    synchronized void removeValue(String name) { preferences.edit().remove(name).commit(); }
+
+    synchronized String accountId() { return loadValue("active_account_id"); }
+
+    synchronized void setAccount(String id, String token) {
+        try {
+            if(!preferences.edit().putString("active_account_id",encodeValue(id))
+                .putString("account_token",encodeValue(token)).commit()) throw new IllegalStateException();
+        } catch(Exception error) { throw new IllegalStateException("Could not persist account credentials"); }
+    }
+
+    synchronized void logout() {
+        removeValue("active_account_id"); removeValue("account_token"); removeValue("pending_login");
+    }
+
+    @JavascriptInterface public synchronized String loadAccountSlot() {
+        return loadValue("progress_slot_" + (accountId().isEmpty() ? "guest" : accountId()));
+    }
+
+    @JavascriptInterface public synchronized boolean saveAccountSlot(String json) {
+        try {
+            String expected = accountId();
+            String actual = new org.json.JSONObject(json).optString("accountId", "");
+            if (!actual.equals(expected)) return false;
+            return saveValue("progress_slot_" + (expected.isEmpty() ? "guest" : expected), json);
+        } catch (Exception ignored) { return false; }
+    }
+
+    @JavascriptInterface public synchronized String profilePhoto() {
+        return loadValue("photo_" + (accountId().isEmpty() ? "guest" : accountId()));
+    }
+
+    @JavascriptInterface public synchronized boolean removeProfilePhoto() {
+        return preferences.edit().remove("photo_" + (accountId().isEmpty() ? "guest" : accountId())).commit();
+    }
+
+    @JavascriptInterface public synchronized void adoptGuestPhoto() {
+        if(accountId().isEmpty()) return;
+        String photo=loadValue("photo_guest");
+        if(!photo.isEmpty() && profilePhoto().isEmpty()) saveValue("photo_"+accountId(),photo);
+        removeValue("photo_guest"); removeValue("progress_slot_guest");
     }
 
     @JavascriptInterface

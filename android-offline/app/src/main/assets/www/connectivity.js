@@ -10,6 +10,7 @@
     if (!["online", "offline", "unknown"].includes(state)) state = "unknown";
     if (badge.dataset.state === state && label.textContent) return;
     badge.dataset.state = state;
+    if (typeof window.dispatchEvent === "function") window.dispatchEvent(new CustomEvent("mente-connection", { detail: state }));
     label.textContent = { online: "Online", offline: "Offline", unknown: "Verificando…" }[state];
     badge.title = state === "online"
       ? "Conectado à internet. O ranking também depende da disponibilidade do servidor."

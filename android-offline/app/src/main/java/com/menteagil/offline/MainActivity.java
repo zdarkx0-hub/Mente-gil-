@@ -1,6 +1,7 @@
 package com.menteagil.offline;
 
 import android.app.Activity;
+import android.content.Intent;
 import android.graphics.Color;
 import android.net.Uri;
 import android.os.Bundle;
@@ -21,6 +22,8 @@ public final class MainActivity extends Activity {
     private WebView webView;
     private MobileRankingBridge mobileRankingBridge;
     private ConnectivityBridge connectivityBridge;
+    private MobileAccountBridge mobileAccountBridge;
+    private ProfilePhotoBridge profilePhotoBridge;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -73,9 +76,14 @@ public final class MainActivity extends Activity {
         settings.setSafeBrowsingEnabled(true);
         settings.setTextZoom(100);
 
-        view.addJavascriptInterface(new SecureDataBridge(this), "MenteAgilData");
-        mobileRankingBridge = new MobileRankingBridge(view);
+        SecureDataBridge store = new SecureDataBridge(this);
+        view.addJavascriptInterface(store, "MenteAgilData");
+        mobileRankingBridge = new MobileRankingBridge(view, store);
         view.addJavascriptInterface(mobileRankingBridge, "MenteAgilRanking");
+        mobileAccountBridge = new MobileAccountBridge(this, view, store);
+        view.addJavascriptInterface(mobileAccountBridge, "MenteAgilAccount");
+        profilePhotoBridge = new ProfilePhotoBridge(this, view, store);
+        view.addJavascriptInterface(profilePhotoBridge, "MenteAgilPhoto");
         connectivityBridge = new ConnectivityBridge(this, view);
         view.addJavascriptInterface(connectivityBridge, "MenteAgilConnectivity");
         view.setWebViewClient(new LocalOnlyWebViewClient() {
@@ -102,6 +110,12 @@ public final class MainActivity extends Activity {
     }
 
     @Override
+    protected void onActivityResult(int requestCode, int resultCode, Intent data) {
+        super.onActivityResult(requestCode, resultCode, data);
+        if (requestCode == ProfilePhotoBridge.REQUEST && profilePhotoBridge != null) profilePhotoBridge.result(resultCode, data);
+    }
+
+    @Override
     public void onBackPressed() {
         if (webView.canGoBack()) {
             webView.goBack();
@@ -116,6 +130,10 @@ public final class MainActivity extends Activity {
             webView.removeJavascriptInterface("MenteAgilData");
             webView.removeJavascriptInterface("MenteAgilRanking");
             webView.removeJavascriptInterface("MenteAgilConnectivity");
+            webView.removeJavascriptInterface("MenteAgilAccount");
+            webView.removeJavascriptInterface("MenteAgilPhoto");
+            if (mobileAccountBridge != null) mobileAccountBridge.close();
+            if (profilePhotoBridge != null) profilePhotoBridge.close();
             if (connectivityBridge != null) connectivityBridge.stop();
             if (mobileRankingBridge != null) mobileRankingBridge.close();
             webView.destroy();
@@ -138,6 +156,8 @@ public final class MainActivity extends Activity {
         @Override
         public WebResourceResponse shouldInterceptRequest(WebView view, WebResourceRequest request) {
             if (isLocal(request.getUrl())) return super.shouldInterceptRequest(view, request);
+            // Profile photos are decoded local JPEGs; they never require a network request.
+            if (!request.isForMainFrame() && request.getUrl().toString().startsWith("data:image/jpeg;base64,")) return null;
 
             return new WebResourceResponse(
                 "text/plain",

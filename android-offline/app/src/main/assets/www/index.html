@@ -134,7 +134,8 @@
 
       <div class="rank-identity panel">
         <label for="ranking-name">Nome público no ranking</label>
-        <input id="ranking-name" maxlength="18" autocomplete="off" placeholder="Escolha seu nome">
+        <input id="ranking-name" maxlength="24" readonly placeholder="Conecte seu perfil">
+        <button type="button" id="ranking-profile-link" class="text-action">Gerenciar nome e conta</button>
       </div>
 
       <div class="panel ranking-panel">
@@ -176,10 +177,12 @@
 
     <section class="screen" data-screen="settings" aria-labelledby="settings-title">
       <p class="eyebrow">NO APARELHO</p>
-      <h1 id="settings-title">Ajustes</h1>
+      <h1 id="settings-title">Configurações</h1>
       <div class="panel settings-panel">
-        <label for="player-name">Seu nome</label>
-        <input id="player-name" maxlength="24" autocomplete="off" placeholder="Jogador">
+        <button type="button" id="open-profile" class="profile-entry">
+          <span class="profile-avatar compact" data-profile-avatar aria-hidden="true">M</span>
+          <span><strong>Configuração de perfil</strong><small id="profile-entry-name">Nome, foto e conta</small></span><span aria-hidden="true">›</span>
+        </button>
         <label class="switch-row" for="sound-toggle">
           <span><strong>Sons</strong><small>acerto e erro</small></span>
           <input id="sound-toggle" type="checkbox" checked>
@@ -203,7 +206,8 @@
         <details class="privacy-details">
           <summary>Privacidade e seus dados</summary>
           <div>
-            <p>Nome, preferências, temas, medalhas locais e histórico ficam cifrados neste aparelho. Ao entrar no ranking, enviamos somente uma identificação aleatória da instalação, o apelido, a categoria e as respostas da partida. O ranking publica apenas apelido, resultado e medalhas competitivas escolhidas.</p>
+            <p>Foto e preferências ficam cifradas neste aparelho. Ao conectar sua conta, o histórico é sincronizado com proteção criptográfica no servidor. O ranking publica nome, ID público, resultado e medalhas escolhidas. Nomes podem se repetir; cada conta tem um ID único.</p>
+            <p>O login com ChatGPT confirma sua identidade. O app não recebe sua senha nem seu histórico de conversas. Amigos veem seu nome e ID; sua foto permanece somente neste aparelho.</p>
             <p>Não usamos publicidade, localização, contatos, câmera ou microfone. O treino comum funciona sem internet.</p>
           </div>
         </details>
@@ -222,12 +226,42 @@
         <section class="danger-zone" aria-labelledby="danger-title">
           <strong id="danger-title">Exclusão de dados</strong>
           <p>O histórico local e o perfil público do ranking são controles diferentes.</p>
+          <p>Se a conta estiver conectada, o histórico salvo online poderá voltar ao sincronizar. Para excluir a conta online e esses dados, use Configuração de perfil.</p>
           <button type="button" class="danger-button" id="clear-data-button">Apagar somente o histórico local</button>
           <button type="button" class="danger-button" id="delete-ranking-button">Excluir perfil e histórico do ranking</button>
           <button type="button" class="danger-button strongest" id="erase-everything-button">Apagar todos os dados do aplicativo</button>
         </section>
       </div>
-      <p class="version">Mente Ágil Beta · versão 1.2.5</p>
+      <p class="version">Mente Ágil Beta · versão 1.3.0</p>
+    </section>
+
+    <section class="screen" data-screen="profile" aria-labelledby="profile-title">
+      <button type="button" id="back-settings" class="back-settings">← Configurações</button>
+      <p class="eyebrow">SUA IDENTIDADE</p><h1 id="profile-title">Seu perfil</h1>
+      <div class="panel profile-panel">
+        <div class="profile-portrait"><span class="profile-avatar" data-profile-avatar aria-label="Foto de perfil">M</span>
+          <div><button type="button" id="choose-photo" class="secondary-action">Escolher foto</button><button type="button" id="remove-photo" class="text-action">Remover foto</button></div></div>
+        <p class="settings-copy">Sua foto fica apenas neste celular. Você escolhe qual imagem o app pode acessar.</p>
+        <label for="player-name">Nome de exibição</label><input id="player-name" maxlength="24" autocomplete="off" placeholder="Jogador">
+        <button type="button" id="save-profile" class="secondary-action">Salvar nome</button>
+        <p class="settings-copy">Outras pessoas podem usar o mesmo nome. Seu ID identifica sua conta.</p>
+        <div class="profile-stats"><div><strong id="profile-trainings">0</strong><small>treinos</small></div><div><strong id="profile-accuracy">0%</strong><small>precisão</small></div><div><strong id="profile-streak">0</strong><small>dias seguidos</small></div></div>
+      </div>
+      <div class="panel profile-panel">
+        <h2>Conta e progresso</h2><p id="account-status" class="settings-copy" role="status">Treine offline ou conecte uma conta para ter seu ID permanente.</p>
+        <div id="account-identity" class="hidden"><label for="public-id">Seu ID público</label><div class="id-copy"><input id="public-id" readonly aria-label="ID público do perfil"><button type="button" id="copy-public-id">Copiar</button></div></div>
+        <button type="button" id="connect-account" class="primary">Entrar com ChatGPT <span aria-hidden="true">↗</span></button>
+        <div id="login-pending" class="hidden"><p class="settings-copy">Confira este código no navegador e autorize somente o pedido iniciado por você.</p><strong id="login-code" class="login-code"></strong><button type="button" id="open-login-browser" class="secondary-action">Abrir autorização</button><button type="button" id="check-login" class="secondary-action">Já autorizei</button></div>
+        <div id="account-actions" class="hidden"><button type="button" id="sync-history" class="secondary-action">Sincronizar histórico</button><p id="sync-status" class="settings-copy" role="status"></p><button type="button" id="logout-account" class="text-action">Sair da conta neste aparelho</button></div>
+        <p class="settings-copy">Ao conectar pela primeira vez, os treinos deste perfil serão associados à sua conta. Use sempre a mesma conta ChatGPT para recuperar seu ID e histórico.</p>
+      </div>
+      <div id="friends-section" class="panel profile-panel hidden">
+        <h2>Amigos</h2><label for="friend-id">ID do jogador</label><div class="id-copy"><input id="friend-id" maxlength="13" autocapitalize="characters" autocomplete="off" placeholder="MA-XXXXXXXXXX"><button type="button" id="find-friend">Buscar</button></div>
+        <div id="friend-result" class="friend-result hidden"></div>
+        <button type="button" id="refresh-friends" class="secondary-action">Atualizar amigos e convites</button>
+        <div id="friends-list" class="friends-list"></div>
+      </div>
+      <details id="account-delete-section" class="privacy-details hidden"><summary>Excluir conta online</summary><div><p>Exclui seu ID, amizades, histórico sincronizado e dados do ranking. Esta ação não pode ser desfeita. É necessário ter entrado na conta nos últimos 15 minutos.</p><label for="delete-account-confirmation">Digite seu ID público para confirmar</label><input id="delete-account-confirmation" autocomplete="off"><button type="button" id="delete-account" class="danger-button">Excluir minha conta online</button></div></details>
     </section>
   </main>
 
@@ -236,12 +270,13 @@
     <button type="button" data-target="history"><span aria-hidden="true">≡</span><small>Histórico</small></button>
     <button type="button" data-target="ranking"><span aria-hidden="true">♛</span><small>Ranking</small></button>
     <button type="button" data-target="progress"><span aria-hidden="true">↗</span><small>Progresso</small></button>
-    <button type="button" data-target="settings"><span aria-hidden="true">⚙</span><small>Ajustes</small></button>
+    <button type="button" data-target="settings" aria-label="Configurações"><span aria-hidden="true">⚙</span><small>Configura<wbr>ções</small></button>
   </nav>
 
   <div id="toast" class="toast" role="status" aria-live="polite"></div>
   <script src="core.js"></script>
   <script src="connectivity.js"></script>
   <script src="app.js"></script>
+  <script src="account.js"></script>
 </body>
 </html>

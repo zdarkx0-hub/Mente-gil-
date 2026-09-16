@@ -254,6 +254,34 @@ legend, .settings-panel > label:not(.switch-row), .rank-identity label { display
 .rank-score small { color: var(--muted); font-size: .65rem; font-weight: 650; }
 
 .settings-panel { margin-top: 22px; padding: 19px; }
+.profile-entry { width:100%; display:grid; grid-template-columns:52px minmax(0,1fr) auto; gap:12px; align-items:center; padding:14px 0 20px; border:0; background:transparent; text-align:left; }
+.profile-entry strong { display:block; font-size:1rem; }
+.profile-entry small { display:block; margin-top:5px; color:var(--muted); font-size:.85rem; overflow-wrap:anywhere; }
+.profile-avatar { display:grid; place-items:center; width:104px; height:104px; flex-shrink:0; overflow:hidden; border-radius:50%; border:2px solid var(--blue); background:var(--panel-2); color:var(--ink); font-size:2rem; font-weight:900; }
+.profile-avatar.compact { width:52px; height:52px; font-size:1.2rem; }
+.profile-avatar img { width:100%; height:100%; object-fit:cover; }
+.profile-panel { padding:20px; margin-top:18px; }
+.profile-panel h2 { margin:0 0 15px; font-size:1.25rem; }
+.profile-panel label,.privacy-details label { display:block; margin:14px 0 7px; color:var(--muted); font-size:.9rem; }
+.profile-panel input,.privacy-details input { width:100%; min-width:0; min-height:48px; border:1px solid var(--line); border-radius:13px; background:var(--bg); padding:10px 12px; color:var(--ink); }
+.profile-panel .settings-copy { margin:13px 0; font-size:.875rem; }
+.profile-portrait { display:flex; gap:20px; align-items:center; flex-wrap:wrap; }
+.profile-portrait .secondary-action { margin-top:0; }
+.profile-panel .secondary-action { font-size:.9rem; }
+.back-settings,.text-action { min-height:44px; padding:8px 0; border:0; background:transparent; color:var(--muted); text-align:left; font-size:.9rem; }
+.back-settings { margin-bottom:15px; color:var(--lime); }
+.profile-stats { display:grid; grid-template-columns:repeat(3,minmax(0,1fr)); gap:8px; border-top:1px solid var(--line); padding-top:18px; margin-top:18px; text-align:center; }
+.profile-stats strong { display:block; font-size:1.3rem; }.profile-stats small { color:var(--muted); font-size:.8rem; }
+.id-copy { display:flex; gap:8px; align-items:stretch; }.id-copy input { flex:1; font-size:.9rem; }
+.id-copy button { border:1px solid var(--line); border-radius:12px; background:var(--panel-2); padding:8px 12px; font-size:.85rem; }
+.login-code { display:block; text-align:center; letter-spacing:.13em; padding:12px; font-size:1.5rem; color:var(--lime); }
+.friends-list,.friend-result { display:grid; gap:12px; margin-top:16px; }
+.friend-card { border:1px solid var(--line); border-radius:14px; padding:13px; background:var(--bg); overflow-wrap:anywhere; }
+.friend-card strong,.friend-card small { display:block; }.friend-card small { color:var(--muted); font-size:.8rem; margin-top:4px; }
+.friend-buttons { display:flex; flex-wrap:wrap; gap:8px; margin-top:10px; }.friend-buttons button { min-height:44px; padding:8px 12px; border:1px solid var(--line); border-radius:11px; background:var(--panel-2); font-size:.85rem; }
+.friend-buttons button:first-child { color:var(--lime); }
+.bottom-nav button[data-target="settings"] small { line-height:1.1; overflow-wrap:normal; }
+@media(max-width:360px) { .profile-panel { padding:16px; }.profile-portrait { gap:12px; }.profile-avatar { width:88px; height:88px; }.id-copy { flex-wrap:wrap; }.id-copy input { flex-basis:100%; } }
 .settings-panel #player-name { width: 100%; margin-bottom: 22px; }
 .switch-row { min-height: 66px; display: flex; align-items: center; justify-content: space-between; gap: 18px; border-top: 1px solid var(--line); border-bottom: 1px solid var(--line); }
 .switch-row span { display: grid; gap: 3px; }
