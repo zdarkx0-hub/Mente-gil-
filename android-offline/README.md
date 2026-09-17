@@ -1,6 +1,7 @@
 # Mente Ágil Mobile para Android
 
-Aplicativo Android independente do site. Os treinos são executados no aparelho e funcionam sem internet. Somente o ranking exclusivo do app usa uma conexão HTTPS.
+Aplicativo Android independente do site. Os treinos são executados no aparelho e
+funcionam sem internet. Ranking, conta, amigos e sincronização usam HTTPS.
 
 ## Recursos
 
@@ -9,13 +10,14 @@ Aplicativo Android independente do site. Os treinos são executados no aparelho 
 - sessões de 10 ou 15 questões e cronômetros de 1 ou 2 minutos;
 - foco automático no campo de resposta e sons de acerto e erro;
 - histórico, evolução, foguinho e conquistas locais;
-- temas Pulso Neon, Chamas, Cristal e Eclipse desbloqueados pelo progresso;
+- temas Pulso Neon, Chamas, Cristal, Eclipse e Rosa Aurora liberados na Beta;
 - coleção de medalhas locais e medalhas competitivas verificadas;
 - ranking mobile separado por operação, dificuldade e tempos de 1 ou 2 minutos;
 - dados criptografados com AES-GCM e chave protegida pelo Android Keystore;
 - backup portátil cifrado por senha com PBKDF2 e AES-GCM;
 - exportação e exclusão separada dos dados locais e do ranking;
-- visual mobile próprio, responsivo para celular e tablet.
+- visual mobile próprio, responsivo para celular e tablet;
+- configuração de perfil com foto local, conta, ID público e amigos.
 
 O ranking do aplicativo não se mistura com o ranking do site. As duas edições evoluem separadamente, portanto uma atualização do site pode não aparecer no app. O histórico continua privado no aparelho; no ranking são publicados apenas o nome escolhido, o resultado agregado e até três medalhas competitivas selecionadas. Desinstalar o aplicativo apaga o histórico local quando não há um backup exportado.
 
@@ -30,9 +32,33 @@ O ranking do aplicativo não se mistura com o ranking do site. As duas edições
 
 ## Validação
 
+Use Node 24.15 ou superior da linha 24:
+
 ```bash
-node --test tests/*.test.cjs
-gradle --no-daemon :app:assembleDebug
+npm ci --ignore-scripts
+npm test
+python3 -m unittest discover -s tests -p 'test_*.py'
 ```
 
-O APK gerado fica em `app/build/outputs/apk/debug/app-debug.apk`. Versão atual: 1.2.0 Mobile.
+A organização dos módulos e as regras para continuar o desenvolvimento estão em
+[ARCHITECTURE.md](ARCHITECTURE.md).
+
+## Compilação da Beta
+
+A versão atual é 1.3.1 Beta (`versionCode` 10), com pacote
+`com.menteagil.offline.beta`. Para uma nova entrega, siga
+[RELEASING.md](RELEASING.md), avance a versão e compile:
+
+```bash
+gradle --no-daemon :app:assembleRelease
+```
+
+O APK sem assinatura fica em `app/build/outputs/apk/release/app-release-unsigned.apk`.
+Ele precisa da assinatura privada existente antes de ser instalado como atualização.
+
+## Atualização 1.3.1
+
+Organiza treino, ranking, histórico, armazenamento e configurações em módulos.
+Corrige respostas atrasadas que podiam afetar outra categoria ou um novo treino,
+protege a troca de contas e preserva sessões antigas sem ID na união do histórico.
+Mantém a identidade e a assinatura da Beta 1.3.0 para instalação como atualização.

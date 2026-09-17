@@ -32,7 +32,7 @@ test("mobile layout uses five destinations and keeps large touch targets", () =>
 
 test("theme preview exposes five themes and a verified medal collection", () => {
   const html = read("app/src/main/assets/www/index.html");
-  const app = read("app/src/main/assets/www/app.js");
+  const app = read("app/src/main/assets/www/catalog.js") + read("app/src/main/assets/www/customization.js");
   const css = read("app/src/main/assets/www/styles.css");
   assert.match(html, /id="theme-grid"/);
   assert.match(html, /id="medal-grid"/);
