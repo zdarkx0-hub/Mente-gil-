@@ -45,7 +45,7 @@ A organização dos módulos e as regras para continuar o desenvolvimento estão
 
 ## Compilação da Beta
 
-A versão entregue de referência é 1.3.0 Beta (`versionCode` 9), com pacote
+A versão atual é 1.3.1 Beta (`versionCode` 10), com pacote
 `com.menteagil.offline.beta`. Para uma nova entrega, siga
 [RELEASING.md](RELEASING.md), avance a versão e compile:
 
@@ -55,3 +55,10 @@ gradle --no-daemon :app:assembleRelease
 
 O APK sem assinatura fica em `app/build/outputs/apk/release/app-release-unsigned.apk`.
 Ele precisa da assinatura privada existente antes de ser instalado como atualização.
+
+## Atualização 1.3.1
+
+Organiza treino, ranking, histórico, armazenamento e configurações em módulos.
+Corrige respostas atrasadas que podiam afetar outra categoria ou um novo treino,
+protege a troca de contas e preserva sessões antigas sem ID na união do histórico.
+Mantém a identidade e a assinatura da Beta 1.3.0 para instalação como atualização.
