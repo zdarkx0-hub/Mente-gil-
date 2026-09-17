@@ -45,8 +45,16 @@ jobs:
         with:
           gradle-version: "8.9"
 
-      - name: Test calculation engine
+      - name: Configure Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: "24"
+          cache: npm
+          cache-dependency-path: android-offline/package-lock.json
+
+      - name: Test mobile features and data compatibility
         run: |
+          npm ci --ignore-scripts
           node --test tests/*.test.cjs
           python3 -m unittest discover -s tests -p 'test_*.py'
 
